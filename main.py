@@ -2,8 +2,8 @@ import sys
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QTimer, qVersion
-import cv2
 import numpy as nd
+import video
 
 def img2pixmap(image):
     height, width, channel = image.shape
@@ -13,9 +13,7 @@ def img2pixmap(image):
     return pixmap
 
 def grabFrame():
-    if not cap.isOpened():
-        cap.open(0)
-    ret, image = cap.read()
+    image = cam.detectFaces(cam.capture())
     window.label_videoCam.setPixmap(img2pixmap(image))
 
 def on_cameraON_clicked():
@@ -23,13 +21,11 @@ def on_cameraON_clicked():
 
 def on_cameraOFF_clicked():
     qtimerFrame.stop()
-    if cap.isOpened():
-        cap.release()
+    cam.close()
 
-print("Qt version: " + str(qVersion()))
-print("OpenCV Version:",cv2.__version__)
+# Creation of the camera
+cam = video.Video(0)
 
-cap = cv2.VideoCapture()
 app = QtWidgets.QApplication(sys.argv)
 window = uic.loadUi("prototype.ui")
 window.btn_cameraOn.clicked.connect(on_cameraON_clicked)
