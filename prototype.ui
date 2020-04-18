@@ -330,4 +330,7 @@
  </widget>
  <resources/>
  <connections/>
+ <slots>
+  <slot>on_micOn_clicked()</slot>
+ </slots>
 </ui>
