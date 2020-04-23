@@ -2,9 +2,10 @@ import sys
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QTimer, qVersion
-import numpy as nd
+import numpy as np
 import video
 import audio
+import matplotlib.pyplot as plt
 
 # Convert a Mat to a Pixmap
 def img2pixmap(image):
@@ -16,7 +17,9 @@ def img2pixmap(image):
 
 # Cyclic capture image
 def grabFrame():
-    image = cam.detectFaces(cam.capture())
+    image, image_gray, rects=cam.detectFaces_dlib(cam.capture())
+    image = cam.getLandmaks(image,image_gray,rects)
+
     window.label_videoCam.setPixmap(img2pixmap(image))
 
 # Cyclic capture sound
