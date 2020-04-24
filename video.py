@@ -14,7 +14,7 @@ predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 class Video:
 	def __init__(self,url):
 		self.url = url
-		self.cam=cv2.VideoCapture()
+		self.cam=cv2.VideoCapture("http://192.168.1.66:8080")
 
 	# Opens the connection to the camera
 	def open(self):

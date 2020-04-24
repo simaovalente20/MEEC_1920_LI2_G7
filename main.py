@@ -5,7 +5,13 @@ from PyQt5.QtCore import QTimer, qVersion
 import numpy as np
 import video
 import audio
-import matplotlib.pyplot as plt
+import pyqtgraph as pg
+from pyqtgraph import PlotWidget, plot
+
+#TODO threading for performance improvement
+#TODO Remove mic close error
+#TODO spectogram graph (Qt Combo Box)
+
 
 # Convert a Mat to a Pixmap
 def img2pixmap(image):
@@ -24,7 +30,16 @@ def grabFrame():
 
 # Cyclic capture sound
 def recording():
-    mic.record()
+    global mic, total_data, max_hold
+    #read data
+    raw_data = mic.record()
+    #convert raw bytes to interger
+    data_sample = np.fromstring(raw_data, dtype=np.int16)
+    total_data = np.concatenate([total_data, data_sample])
+    #remove old data
+    if len(total_data) > audio.MAX_PLOT_SIZE:
+        total_data = total_data[audio.CHUNK:]
+    audio_waveform.setData(total_data)
 
 # Starts image capture
 def on_cameraON_clicked():
@@ -53,11 +68,23 @@ mic = audio.Audio()
 
 app = QtWidgets.QApplication(sys.argv)
 window = uic.loadUi("prototype.ui")
+
+#Signals
 window.btn_cameraOn.clicked.connect(on_cameraON_clicked)
 window.btn_cameraOff.clicked.connect(on_cameraOFF_clicked)
 window.btn_micOn.clicked.connect(on_micOn_clicked)
 window.btn_micOff.clicked.connect(on_micOff_clicked)
 window.label_videoCam.setScaledContents(True)
+
+# Audio plot time domain waveform
+audio_plot = window.plotWidget
+pg.PlotWidget.getPlotItem(audio_plot).setTitle("Audio Signal")
+pg.PlotWidget.getPlotItem(audio_plot).showGrid(True, True)
+pg.PlotWidget.getPlotItem(audio_plot).addLegend()
+pg.PlotWidget.setBackground(audio_plot,'w')
+audio_waveform = audio_plot.plot(pen=(24, 215, 248), name = "Waveform")
+#pg.PlotWidget.setAntialiasing(window.plotWidget,aa=1)
+total_data = []
 
 # Image capture timer
 qtimerFrame = QTimer()

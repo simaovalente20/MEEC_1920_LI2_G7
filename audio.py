@@ -6,6 +6,8 @@ CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 RECORD_SECONDS=5
+MAX_PLOT_SIZE = CHUNK * 50
+DATA = 0
 
 class Audio:
     def __init__(self):
@@ -18,6 +20,7 @@ class Audio:
 
     def record(self):
         self.frames.append(self.stream.read(CHUNK))
+        return self.stream.read(CHUNK)
 
     def close(self):
         self.stream.stop_stream()

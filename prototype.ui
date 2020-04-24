@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>744</width>
-    <height>529</height>
+    <width>1114</width>
+    <height>673</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,24 +25,12 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
-           <widget class="QLabel" name="label_soundGraph">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>50</verstretch>
-             </sizepolicy>
-            </property>
+           <widget class="PlotWidget" name="plotWidget">
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>100</height>
+              <height>200</height>
              </size>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::Panel</enum>
-            </property>
-            <property name="text">
-             <string>Grafico Som</string>
             </property>
            </widget>
           </item>
@@ -62,8 +50,8 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>0</width>
-            <height>0</height>
+            <width>400</width>
+            <height>400</height>
            </size>
           </property>
           <property name="maximumSize">
@@ -321,13 +309,20 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>744</width>
+     <width>1114</width>
      <height>21</height>
     </rect>
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>pyqtgraph.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
  <slots>
