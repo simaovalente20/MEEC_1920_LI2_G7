@@ -3,6 +3,8 @@ import dlib
 import argparse
 import imutils
 from imutils import face_utils
+import pickle
+import numpy as np
 
 # Criation of classifier that allows detecting faces with opencv
 face_cascade = cv2.CascadeClassifier("venv/Lib/site-packages/cv2/data/haarcascade_frontalface_default.xml")
@@ -12,13 +14,14 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
 class Video:
-	def __init__(self,url):
-		self.url = url
-		self.cam=cv2.VideoCapture("http://192.168.1.66:8080")
+	def __init__(self):
+		pass
 
 	# Opens the connection to the camera
-	def open(self):
-		self.cam.open(self.url)
+	def open(self,url):
+		self.url=url
+		self.cam = cv2.VideoCapture(url)
+		#self.cam.open(self.url)
 
 	# Closes the connection to the camera
 	def close(self):
@@ -56,7 +59,8 @@ class Video:
 		return image,image_gray,rects
 
 	# Find landmarks in the face
-	def getLandmaks(self,image,image_gray,rects):
+	def getLandmaks(self,image):
+		image, image_gray, rects = self.detectFaces_dlib(image)
 		# Cycles through the detected faces
 		for (i, rect) in enumerate(rects):
 			# determine the facial landmarks for the face region
@@ -66,8 +70,21 @@ class Video:
 			#Cycles through and draw them on the image
 			for (x, y) in shape:
 				cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
+		if len(rects)==0:
+			shape=None
+		return image, shape
 
-		return image
+	def classify(self,shape):
+		x = np.zeros((68, 2), dtype=float)
+		xx = np.zeros((136), dtype=float)
+		x=shape
+		nx,ny=x.shape
+		xx=x.reshape(nx*ny)
+		xx=xx.reshape(1,-1)
+		model = pickle.load(open('KNeighborsClassifier.sav', 'rb'))
+		print(x)
+		predict=model.predict(np.array(xx))
+		print(predict)
 
 	def getImage(self,url):
 		image = cv2.imread(url)

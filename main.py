@@ -23,8 +23,11 @@ def img2pixmap(image):
 
 # Cyclic capture image
 def grabFrame():
-    image, image_gray, rects=cam.detectFaces_dlib(cam.capture())
-    image = cam.getLandmaks(image,image_gray,rects)
+    #image, image_gray, rects=cam.detectFaces_dlib(cam.capture())
+    image, shape = cam.getLandmaks(cam.capture())
+
+    if type(shape)!=type(None) :
+        cam.classify(shape)
 
     window.label_videoCam.setPixmap(img2pixmap(image))
 
@@ -43,6 +46,7 @@ def recording():
 
 # Starts image capture
 def on_cameraON_clicked():
+    cam.open(0);
     qtimerFrame.start(50)
 
 # Stops image capture
@@ -62,7 +66,7 @@ def on_micOff_clicked():
     mic.save("file.wav")
 
 # Creation of the camera
-cam = video.Video(0)
+cam = video.Video()
 # Creation of the micro
 mic = audio.Audio()
 
