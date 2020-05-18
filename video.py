@@ -5,6 +5,7 @@ import imutils
 from imutils import face_utils
 import pickle
 import numpy as np
+import math
 
 # Criation of classifier that allows detecting faces with opencv
 face_cascade = cv2.CascadeClassifier("venv/Lib/site-packages/cv2/data/haarcascade_frontalface_default.xml")
@@ -12,6 +13,8 @@ face_cascade = cv2.CascadeClassifier("venv/Lib/site-packages/cv2/data/haarcascad
 # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+
+model = pickle.load(open('KNeighborsClassifier.sav', 'rb'))
 
 class Video:
 	def __init__(self):
@@ -61,6 +64,8 @@ class Video:
 	# Find landmarks in the face
 	def getLandmaks(self,image):
 		image, image_gray, rects = self.detectFaces_dlib(image)
+		shape=None
+		distances = np.zeros((68*68-68), dtype=float)  # 68,2)
 		# Cycles through the detected faces
 		for (i, rect) in enumerate(rects):
 			# determine the facial landmarks for the face region
@@ -68,24 +73,113 @@ class Video:
 			#convert the facial landmark (x, y)-coordinates to a NumPy array
 			shape = imutils.face_utils.shape_to_np(shape)
 			#Cycles through and draw them on the image
+			j=0
 			for (x, y) in shape:
+				cv2.putText(image,str(j),(x,y),cv2.FONT_HERSHEY_SIMPLEX,0.3,255)
 				cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
-		if len(rects)==0:
-			shape=None
-		return image, shape
+				j=j+1
+			dist4 = math.sqrt((shape[35, 0] - shape[31, 0]) ** 2 + (shape[35, 1] - shape[31, 1]) ** 2)
+
+			for i in range(0,67):
+				'''
+				distances[i]=dist4/math.sqrt((shape[i+1, 0] - shape[i, 0]) ** 2 + (shape[i+1, 1] - shape[i, 1]) ** 2)
+				print(distances[i])
+				'''
+				# distances[i]=dist4/math.sqrt((shape[i+1, 0] - shape[i, 0]) ** 2 + (shape[i+1, 1] - shape[i, 1]) ** 2)
+				print("i: ", i)
+				for j in range(0, 68):
+					print("j: ", j)
+					if (j < i):
+						distance = math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
+						if distance == 0:
+							distances[(i * 68) + j - (i)] = 0
+						else:
+							distances[(i * 68) + j - (i)] = dist4 / distance
+					elif (j > i):
+						distance = math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
+						if distance == 0:
+							distances[(i * 68) + j - (i + 1)] = 0
+						else:
+							distances[(i * 68) + j - (i + 1)] = dist4 / distance
+			#distances = distances.reshape(-1, 1)
+		return image, distances, rects
 
 	def classify(self,shape):
+		predict=model.predict(np.array(shape).reshape(1,-1))
+		print(predict)
+
+	def classify1(self, shape):
 		x = np.zeros((68, 2), dtype=float)
 		xx = np.zeros((136), dtype=float)
-		x=shape
-		nx,ny=x.shape
-		xx=x.reshape(nx*ny)
-		xx=xx.reshape(1,-1)
+		x = shape
+		nx, ny = x.shape
+		xx = x.reshape(nx * ny)
+		xx = xx.reshape(1, -1)
 		model = pickle.load(open('KNeighborsClassifier.sav', 'rb'))
 		print(x)
-		predict=model.predict(np.array(xx))
+		predict = model.predict(np.array(xx))
 		print(predict)
 
 	def getImage(self,url):
 		image = cv2.imread(url)
 		return image
+
+	def getImageFace100x100(self, image, rects):
+		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		# Draw rectangle around the faces
+		for (i, rect) in enumerate(rects):
+			print("number",i)
+			# Convert dlib's rectangle to a OpenCV-style bounding box
+			(x, y, w, h) = face_utils.rect_to_bb(rect)
+			im_face = image_gray[y:y + h, x:x + w]
+			im_face = cv2.resize(im_face, (100, 100))
+			gray_face=im_face.reshape(-1)
+		return np.array(gray_face.reshape(-1))
+
+
+
+	def training(self,image):
+		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		# Detect faces
+		rects = detector(image_gray, 1)
+		# Cycles through the detected faces
+		for (i, rect) in enumerate(rects):
+			(x, y, w, h) = face_utils.rect_to_bb(rect)
+			# determine the facial landmarks for the face region
+			shape = predictor(image_gray, rect)
+			print(x,y,w,h)
+			#shape = shape-rect
+			# convert the facial landmark (x, y)-coordinates to a NumPy array
+			shape = imutils.face_utils.shape_to_np(shape)
+
+			for (x, y) in shape:
+				cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
+			cv2.imshow(str(i),image)
+			#cv2.waitKey(0)
+
+			#Distância do fundo do nariz
+			#Usado como referencia para as restantes distancias
+			dist4 = math.sqrt((shape[35, 0] - shape[31, 0]) ** 2 + (shape[35, 1] - shape[31, 1]) ** 2)
+
+			#Cáluclo relação de das distancias de ponto a ponto consecutivo em relação nariz
+			distances = np.zeros((68*68-68), dtype=float)  # 68,2)
+			for i in range(0,68):
+				#distances[i]=dist4/math.sqrt((shape[i+1, 0] - shape[i, 0]) ** 2 + (shape[i+1, 1] - shape[i, 1]) ** 2)
+				print("i: ",i)
+				for j in range(0,68):
+					print("j: ",j)
+					if(j<i):
+						distance=math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
+						if distance==0:
+							distances[(i * 68) + j - (i)] = 0
+						else:
+							distances[(i * 68) + j - (i)] = dist4 / distance
+					elif(j>i):
+						distance=math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
+						if distance==0:
+							distances[(i * 68) + j - (i + 1)]=0
+						else:
+							distances[(i*68)+j-(i+1)] = dist4 / distance
+
+			distances = distances.reshape(-1, 1)
+		return distances
