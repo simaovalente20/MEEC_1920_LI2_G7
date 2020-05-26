@@ -24,9 +24,8 @@ def img2pixmap(image):
 # Cyclic capture image
 def grabFrame():
     cap=cam.capture()
-    image, shape, rects = cam.getLandmaks(cap)
-    if len(rects)!=0:
-        cam.classify(shape.reshape(-1))
+
+    image=cam.classify(cap)
 
     window.label_videoCam.setPixmap(img2pixmap(image))
 

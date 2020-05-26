@@ -8,10 +8,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn import metrics
+from sklearn.preprocessing import StandardScaler
+
 import pickle
 
-#image = cv2.imread("Dataset/MEEC_1920_LI2-master/G8/Imagens/G8_1.jpg")
-#cv2.imshow("Imagem G1_0",image)
 
 
 vid = video.Video()
@@ -60,20 +60,25 @@ XX[:,:] = pickle.load(open('shapeX.sav', 'rb'))
 YY[:] = pickle.load(open('shapeY.sav', 'rb'))
 
 
-X_train, X_test, Y_train, Y_test = train_test_split(XX,YY, test_size=0.2, stratify = YY, random_state=True)
-#print(type(X_train))
-#print(X_train)
-#print(Y_train)
 
-model = LinearSVC()
+
+X_train, X_test, Y_train, Y_test = train_test_split(XX,YY, test_size=0.2, stratify = YY, random_state=True)
+
+scaler = StandardScaler()
+scaler.fit(X_train)
+X_train=scaler.transform(X_train)
+X_test=scaler.transform(X_test)
+
+model = LinearSVC(max_iter=5000,dual=False,fit_intercept=False)
 #model = KNeighborsClassifier(n_neighbors=3)
-#model = DecisionTreeClassifier(max_depth=10)
-#model = RandomForestClassifier(n_estimators=10000)
+#model = DecisionTreeClassifier(max_depth=50)
+#model = RandomForestClassifier(n_estimators=100)
 #model = AdaBoostClassifier(n_estimators=1000)
-#model = MLPClassifier(hidden_layer_sizes=(150, 150,50), learning_rate_init=0.0001, max_iter=300,shuffle=False)
+#model = MLPClassifier(hidden_layer_sizes=(300, 150,50), learning_rate_init=0.001, max_iter=300,shuffle=False)
 
 model.fit(X_train,Y_train)
-pickle.dump(model, open('KNeighborsClassifier.sav', 'wb'))
+pickle.dump(model, open('LinearSVC.sav', 'wb'))
+pickle.dump(scaler, open('Scaler.sav', 'wb'))
 
 Y_predict = model.predict(X_test)
 
@@ -92,3 +97,6 @@ print(accuracy)
 cr=metrics.classification_report(Y_test,Y_predict)
 print("Classification Report:")
 print(cr)
+
+#print(model.decision_function(X_test))
+#print(model._predict_proba_lr(X_test))

@@ -14,7 +14,8 @@ face_cascade = cv2.CascadeClassifier("venv/Lib/site-packages/cv2/data/haarcascad
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
-model = pickle.load(open('KNeighborsClassifier.sav', 'rb'))
+model = pickle.load(open('LinearSVC.sav', 'rb'))
+scaler= pickle.load(open('Scaler.sav', 'rb'))
 
 class Video:
 	def __init__(self):
@@ -53,11 +54,13 @@ class Video:
 		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 		#Detect faces
 		rects = detector(image_gray, 1)
+
 		# Draw rectangle around the faces
 		for(i,rect) in enumerate(rects):
 			# Convert dlib's rectangle to a OpenCV-style bounding box
 			(x, y, w, h) = face_utils.rect_to_bb(rect)
 			cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
 
 		return image,image_gray,rects
 
@@ -72,41 +75,48 @@ class Video:
 			shape = predictor(image_gray, rect)
 			#convert the facial landmark (x, y)-coordinates to a NumPy array
 			shape = imutils.face_utils.shape_to_np(shape)
+
 			#Cycles through and draw them on the image
 			j=0
 			for (x, y) in shape:
 				cv2.putText(image,str(j),(x,y),cv2.FONT_HERSHEY_SIMPLEX,0.3,255)
 				cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
 				j=j+1
-			dist4 = math.sqrt((shape[35, 0] - shape[31, 0]) ** 2 + (shape[35, 1] - shape[31, 1]) ** 2)
 
-			for i in range(0,67):
-				'''
-				distances[i]=dist4/math.sqrt((shape[i+1, 0] - shape[i, 0]) ** 2 + (shape[i+1, 1] - shape[i, 1]) ** 2)
-				print(distances[i])
-				'''
-				# distances[i]=dist4/math.sqrt((shape[i+1, 0] - shape[i, 0]) ** 2 + (shape[i+1, 1] - shape[i, 1]) ** 2)
-				print("i: ", i)
+
+			dist_nose = math.sqrt((shape[35, 0] - shape[31, 0]) ** 2 + (shape[35, 1] - shape[31, 1]) ** 2)
+
+			for i in range(0,68):
 				for j in range(0, 68):
-					print("j: ", j)
 					if (j < i):
 						distance = math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
 						if distance == 0:
 							distances[(i * 68) + j - (i)] = 0
 						else:
-							distances[(i * 68) + j - (i)] = dist4 / distance
+							distances[(i * 68) + j - (i)] = dist_nose / distance
 					elif (j > i):
 						distance = math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
 						if distance == 0:
 							distances[(i * 68) + j - (i + 1)] = 0
 						else:
-							distances[(i * 68) + j - (i + 1)] = dist4 / distance
-			#distances = distances.reshape(-1, 1)
+							distances[(i * 68) + j - (i + 1)] = dist_nose / distance
 		return image, distances, rects
 
-	def classify(self,shape):
-		predict=model.predict(np.array(shape).reshape(1,-1))
-		print(predict)
+	def classify(self,image):
+
+		image, shape, rects = self.getLandmaks(image.copy())
+
+		if len(rects) != 0:
+			(x, y, w, h) = face_utils.rect_to_bb(rects[0])
+			normalize = scaler.transform(np.array(shape).reshape(1, -1))
+			predict = model.predict(normalize)
+			probability = model._predict_proba_lr(normalize)
+			if probability.max() > 0.25:
+				cv2.putText(image,"Grupo " + str(predict), (x, y - 10), 0, 1, (0,255,0))
+			else:
+				cv2.putText(image, "Desconhecido", (x, y - 10), 0, 1, (0,0,255))
+		return image
+
 
 	def classify1(self, shape):
 		x = np.zeros((68, 2), dtype=float)
@@ -165,9 +175,7 @@ class Video:
 			distances = np.zeros((68*68-68), dtype=float)  # 68,2)
 			for i in range(0,68):
 				#distances[i]=dist4/math.sqrt((shape[i+1, 0] - shape[i, 0]) ** 2 + (shape[i+1, 1] - shape[i, 1]) ** 2)
-				print("i: ",i)
 				for j in range(0,68):
-					print("j: ",j)
 					if(j<i):
 						distance=math.sqrt((shape[i, 0] - shape[j, 0]) ** 2 + (shape[i, 1] - shape[j, 1]) ** 2)
 						if distance==0:
