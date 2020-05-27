@@ -112,7 +112,8 @@ class Video:
 			predict = model.predict(normalize)
 			probability = model._predict_proba_lr(normalize)
 			if probability.max() > 0.25:
-				cv2.putText(image,"Grupo " + str(predict), (x, y - 10), 0, 1, (0,255,0))
+				cv2.putText(image,"Grupo " + str(predict), (x, y - 50), 0, 1, (0,255,0))
+				cv2.putText(image, str(probability.max()), (x, y - 10), 0, 1, (0, 255, 0))
 			else:
 				cv2.putText(image, "Desconhecido", (x, y - 10), 0, 1, (0,0,255))
 		return image
