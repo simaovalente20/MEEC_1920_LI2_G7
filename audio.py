@@ -7,13 +7,14 @@ import sounddevice
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.multiclass import OneVsRestClassifier
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 
-RECORD_SECONDS=2
+RECORD_SECONDS= 1
 MAX_PLOT_SIZE = CHUNK * 50
 DATA = 0
 
@@ -23,15 +24,20 @@ FEED_SAMPLES = int(RATE * FEED_DURATION)
 keyword_list={"avancar", "baixo ", "centro", "cima", "direita", "esquerda", "parar", "recuar"}
 speaker_list={"G1","G2","G3","G4","G5","G6","G7","G8"}
 
-model_keyword = MLPClassifier()
-model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
 scaler_keyword = StandardScaler()
 scaler_keyword = pickle.load(open("result/scaler_keyword.bin", "rb"))
+model_keyword = MLPClassifier()
+model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
+OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
+OvR_model_keyword = pickle.load(open("result/new_OvR_mlp_classifier_keyword.model", "rb"))
 
-model_speaker = MLPClassifier()
-model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
 scaler_speaker = StandardScaler()
 scaler_speaker = pickle.load(open("result/scaler_speaker.bin", "rb"))
+model_speaker = MLPClassifier()
+model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
+OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
+OvR_model_speaker = pickle.load(open("result/new_OvR_mlp_classifier_speaker.model", "rb"))
+
 
 class Audio:
     def __init__(self):
@@ -72,7 +78,7 @@ class Audio:
         self.stream.close()
         self.audio.terminate()
 
-        self.frames = sounddevice.rec(int(FEED_DURATION * RATE), samplerate=RATE, channels=2)
+        self.frames = sounddevice.rec(FEED_SAMPLES, samplerate=RATE, channels=2)
         sounddevice.wait()
         self.frames = librosa.to_mono(self.frames)
 
@@ -109,8 +115,8 @@ class Audio:
         return speaker_normalized
 
     def realtime_predict(self, keyword, speaker):
-        keyword_prediction = model_keyword.predict(keyword)
-        speaker_prediction = model_speaker.predict(speaker)
+        keyword_prediction = OvR_model_keyword.predict(keyword)
+        speaker_prediction = OvR_model_speaker.predict(speaker)
 
 
         keyword_result = keyword_prediction[0]
