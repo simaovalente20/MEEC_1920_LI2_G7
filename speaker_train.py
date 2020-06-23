@@ -5,24 +5,12 @@ import librosa
 import numpy as np
 import os, glob, pickle
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF
 from sklearn import metrics
-import audio
+from sklearn.preprocessing import StandardScaler
 
-word_command = {
-    "Avancar",
-    "Baixo ",
-    "Centro",
-    "Cima",
-    "Direita",
-    "Esquerda",
-    "Parar",
-    "Recuar"
-}
 
+word_command = {"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
 
 #DataFlair - Extract features (mfcc, chroma, mel) from a sound file
 def extract_feature(file_name, **kwargs):
@@ -86,14 +74,15 @@ def load_data(test_size = 0.5):
 
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)
 
-# print some details
-# number of samples in training data
+scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
+scaler.fit(X_train)
+X_train = scaler.transform(X_train)
+X_test = scaler.transform(X_test)
+pickle.dump(scaler,open('result/scaler_speaker.bin','wb'))
+
+
 print("[+] Number of training samples:", X_train.shape[0])
-# number of samples in testing data
 print("[+] Number of testing samples:", X_test.shape[0])
-# number of features used
-# this is a vector of features extracted
-# using extract_features() function
 print("[+] Number of features:", X_train.shape[1])
 
 model = MLPClassifier(alpha=0.01, batch_size=256, epsilon=1e-08, hidden_layer_sizes=(300,), learning_rate='adaptive',max_iter=500)
@@ -104,7 +93,6 @@ model.fit(X_train,Y_train)
 # predict 25% of data to measure how good we are
 Y_predict = model.predict(X_test)
 
-
 cm= metrics.confusion_matrix(Y_test, Y_predict)
 print("Confusion Matrix:")
 print(cm)
@@ -113,7 +101,6 @@ prfs = metrics.precision_recall_fscore_support(Y_test, Y_predict)
 print("Precision Recall Fscor Support:")
 print(prfs)
 
-# calculate the accuracy
 accuracy = metrics.accuracy_score(Y_test,Y_predict)
 print("Accuracy:")
 print(accuracy)
@@ -122,11 +109,9 @@ cr=metrics.classification_report(Y_test,Y_predict)
 print("Classification Report:")
 print(cr)
 
-# now we save the model
-# make result directory if doesn't exist yet
+# save the model
 if not os.path.isdir("result"):
     os.mkdir("result")
-
 pickle.dump(model, open("result/mlp_classifier_speaker.model", "wb"))
 
 stop=0

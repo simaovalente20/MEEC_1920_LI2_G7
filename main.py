@@ -32,12 +32,11 @@ def grabFrame():
 # Cyclic capture sound
 def recording():
     global mic, total_data, max_hold
-    #read data
     raw_data = mic.record()
-    #convert raw bytes to interger
-    data_sample = np.fromstring(raw_data, dtype=np.int16)
+    '''PyQtGraph plot'''
+    data_sample = np.fromstring(raw_data, dtype=np.int16) #convert raw bytes to interger
     total_data = np.concatenate([total_data, data_sample])
-    #remove old data
+
     if len(total_data) > audio.MAX_PLOT_SIZE:
         total_data = total_data[audio.CHUNK:]
     audio_waveform.setData(total_data)
@@ -54,7 +53,13 @@ def on_cameraOFF_clicked():
 
 # Starts sound capture
 def on_micOn_clicked():
-    mic.open()
+    #mic.open()
+    clip = mic.get_audio_input_stream()
+    keyword = mic.extract_features_keyword(clip)
+    speaker = mic.extract_features_speaker(clip)
+    keyword_prd , speaker_prd = mic.realtime_predict(keyword,speaker)
+    print(keyword_prd)
+    print(speaker_prd)
     qtimerRecord.start()
 
 # Stops sound capture
