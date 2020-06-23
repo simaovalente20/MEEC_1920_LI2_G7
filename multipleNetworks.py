@@ -22,7 +22,7 @@ n_imagesForGroup=20;
 nLandmarks=68;
 
 
-'''
+
 XX1=np.zeros((nGrupos*n_imagesForGroup+(nGrupos-2)*n_imagesForGroup,nLandmarks*nLandmarks-nLandmarks), dtype=float)
 XX2=np.zeros((nGrupos*n_imagesForGroup+(nGrupos-2)*n_imagesForGroup,nLandmarks*nLandmarks-nLandmarks), dtype=float)
 XX3=np.zeros((nGrupos*n_imagesForGroup+(nGrupos-2)*n_imagesForGroup,nLandmarks*nLandmarks-nLandmarks), dtype=float)
@@ -371,7 +371,7 @@ YY5[:] = pickle.load(open('shapeY5.sav', 'rb'))
 YY6[:] = pickle.load(open('shapeY6.sav', 'rb'))
 YY7[:] = pickle.load(open('shapeY7.sav', 'rb'))
 YY8[:] = pickle.load(open('shapeY8.sav', 'rb'))
-
+'''
 
 
 X_train1, X_test1, Y_train1, Y_test1 = train_test_split(XX1, YY1, test_size=0.2, stratify=YY1, random_state=True)
