@@ -15,6 +15,14 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
 model = pickle.load(open('LinearSVC.sav', 'rb'))
+model1 = pickle.load(open('LinearSVC1.sav', 'rb'))
+model2 = pickle.load(open('LinearSVC2.sav', 'rb'))
+model3 = pickle.load(open('LinearSVC3.sav', 'rb'))
+model4 = pickle.load(open('LinearSVC4.sav', 'rb'))
+model5 = pickle.load(open('LinearSVC5.sav', 'rb'))
+model6 = pickle.load(open('LinearSVC6.sav', 'rb'))
+model7 = pickle.load(open('LinearSVC7.sav', 'rb'))
+model8 = pickle.load(open('LinearSVC8.sav', 'rb'))
 scaler= pickle.load(open('Scaler.sav', 'rb'))
 
 class Video:
@@ -111,43 +119,84 @@ class Video:
 			normalize = scaler.transform(np.array(shape).reshape(1, -1))
 			predict = model.predict(normalize)
 			probability = model._predict_proba_lr(normalize)
-			if probability.max() > 0.25:
+			if probability.max() > 0:
+				cv2.putText(image, "Grupo " + str(predict), (x, y - 50), 0, 1, (0, 255, 0))
+				cv2.putText(image, str(probability.max()), (x, y - 10), 0, 1, (0, 255, 0))
+			else:
+				cv2.putText(image, "Desconhecido", (x, y - 10), 0, 1, (0, 0, 255))
+		return image
+
+	def classifyMultiple(self,image):
+
+		image, shape, rects = self.getLandmaks(image.copy())
+
+		result=[]
+
+		if len(rects) != 0:
+			(x, y, w, h) = face_utils.rect_to_bb(rects[0])
+			normalize = scaler.transform(np.array(shape).reshape(1, -1))
+
+			predict1 = model1.predict(normalize)
+			predict2 = model2.predict(normalize)
+			predict3 = model3.predict(normalize)
+			predict4 = model4.predict(normalize)
+			predict5 = model5.predict(normalize)
+			predict6 = model6.predict(normalize)
+			predict7 = model7.predict(normalize)
+			predict8 = model8.predict(normalize)
+
+			probability1 = model1._predict_proba_lr(normalize)
+			probability2 = model2._predict_proba_lr(normalize)
+			probability3 = model3._predict_proba_lr(normalize)
+			probability4 = model4._predict_proba_lr(normalize)
+			probability5 = model5._predict_proba_lr(normalize)
+			probability6 = model6._predict_proba_lr(normalize)
+			probability7 = model7._predict_proba_lr(normalize)
+			probability8 = model8._predict_proba_lr(normalize)
+
+			print("Grupo 1: ", predict1, probability1.max())
+			print("Grupo 2: ", predict2, probability2.max())
+			print("Grupo 3: ", predict3, probability3.max())
+			print("Grupo 4: ", predict4, probability4.max())
+			print("Grupo 5: ", predict5, probability5.max())
+			print("Grupo 6: ", predict6, probability6.max())
+			print("Grupo 7: ", predict7, probability7.max())
+			print("Grupo 8: ", predict8, probability8.max())
+
+			result.append([predict1[0], probability1.max()])
+			result.append([predict2[0], probability2.max()])
+			result.append([predict3[0], probability3.max()])
+			result.append([predict4[0], probability4.max()])
+			result.append([predict5[0], probability5.max()])
+			result.append([predict6[0], probability6.max()])
+			result.append([predict7[0], probability7.max()])
+			result.append([predict8[0], probability8.max()])
+
+
+			max=result[0]
+			max[1]=0
+
+			for i in range(1,len(result)):
+				#print(result[i])
+				#print(result[i][0])
+				#print(result[i].pop(0).pop())
+				print(max[1])
+				if result[i][0]== 1:
+					if result[i][1]>max[1]:
+						max[0]=i+1
+						max[1]=result[i][1]
+
+			print("Máximo", max)
+
+
+			'''
+			if probability.max() > 0:
 				cv2.putText(image,"Grupo " + str(predict), (x, y - 50), 0, 1, (0,255,0))
 				cv2.putText(image, str(probability.max()), (x, y - 10), 0, 1, (0, 255, 0))
 			else:
 				cv2.putText(image, "Desconhecido", (x, y - 10), 0, 1, (0,0,255))
+			'''
 		return image
-
-
-	def classify1(self, shape):
-		x = np.zeros((68, 2), dtype=float)
-		xx = np.zeros((136), dtype=float)
-		x = shape
-		nx, ny = x.shape
-		xx = x.reshape(nx * ny)
-		xx = xx.reshape(1, -1)
-		model = pickle.load(open('KNeighborsClassifier.sav', 'rb'))
-		print(x)
-		predict = model.predict(np.array(xx))
-		print(predict)
-
-	def getImage(self,url):
-		image = cv2.imread(url)
-		return image
-
-	def getImageFace100x100(self, image, rects):
-		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		# Draw rectangle around the faces
-		for (i, rect) in enumerate(rects):
-			print("number",i)
-			# Convert dlib's rectangle to a OpenCV-style bounding box
-			(x, y, w, h) = face_utils.rect_to_bb(rect)
-			im_face = image_gray[y:y + h, x:x + w]
-			im_face = cv2.resize(im_face, (100, 100))
-			gray_face=im_face.reshape(-1)
-		return np.array(gray_face.reshape(-1))
-
-
 
 	def training(self,image):
 		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
