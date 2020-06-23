@@ -419,7 +419,7 @@ model.fit(X_train1, Y_train1)
 
 Y_predict = model.predict(X_test1)
 
-cm = metrics.confusion_matrix(Y_test1, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test1, Y_predict, labels=[0, 1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -445,7 +445,7 @@ model.fit(X_train2, Y_train2)
 
 Y_predict = model.predict(X_test2)
 
-cm = metrics.confusion_matrix(Y_test2, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test2, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -471,7 +471,7 @@ model.fit(X_train3, Y_train3)
 
 Y_predict = model.predict(X_test3)
 
-cm = metrics.confusion_matrix(Y_test3, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test3, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -497,7 +497,7 @@ model.fit(X_train4, Y_train4)
 
 Y_predict = model.predict(X_test4)
 
-cm = metrics.confusion_matrix(Y_test4, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test4, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -523,7 +523,7 @@ model.fit(X_train5, Y_train5)
 
 Y_predict = model.predict(X_test5)
 
-cm = metrics.confusion_matrix(Y_test5, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test5, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -549,7 +549,7 @@ model.fit(X_train6, Y_train6)
 
 Y_predict = model.predict(X_test6)
 
-cm = metrics.confusion_matrix(Y_test6, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test6, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -575,7 +575,7 @@ model.fit(X_train7, Y_train7)
 
 Y_predict = model.predict(X_test7)
 
-cm = metrics.confusion_matrix(Y_test7, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test7, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
@@ -601,7 +601,7 @@ model.fit(X_train8, Y_train8)
 
 Y_predict = model.predict(X_test8)
 
-cm = metrics.confusion_matrix(Y_test8, Y_predict, labels=[1, 0])
+cm = metrics.confusion_matrix(Y_test8, Y_predict, labels=[0,1])
 print("Confusion Matrix:")
 print(cm)
 
