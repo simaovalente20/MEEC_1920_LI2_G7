@@ -3,6 +3,7 @@ import numpy as np
 import video
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
@@ -16,13 +17,18 @@ import pickle
 
 vid = video.Video()
 
-'''
+
 #XX=np.zeros((8*20,68*2), dtype=float) #68,2)
 #XX=np.zeros((8*20,67), dtype=float) #68,2)
-XX=np.zeros((8*20,68*68-68), dtype=float)
-YY=np.zeros((8*20), dtype = int)
+nGrupos=8;
 
-for i in range(1,9):
+'''
+
+
+XX=np.zeros((nGrupos*20,68*68-68), dtype=float)
+YY=np.zeros((nGrupos*20), dtype = int)
+
+for i in range(1,nGrupos+1):
     ims=[]
     for j in range(0,20):
         print(i,j);
@@ -54,12 +60,10 @@ pickle.dump(YY, open('shapeY.sav', 'wb'))
 
 '''
         
-XX=np.zeros((8*20,68*68-68), dtype=float) #68,2)
-YY=np.zeros((8*20), dtype = int)
+XX=np.zeros((nGrupos*20,68*68-68), dtype=float) #68,2)
+YY=np.zeros((nGrupos*20), dtype = int)
 XX[:,:] = pickle.load(open('shapeX.sav', 'rb'))
 YY[:] = pickle.load(open('shapeY.sav', 'rb'))
-
-
 
 
 X_train, X_test, Y_train, Y_test = train_test_split(XX,YY, test_size=0.2, stratify = YY, random_state=True)
@@ -70,6 +74,7 @@ X_train=scaler.transform(X_train)
 X_test=scaler.transform(X_test)
 
 model = LinearSVC(max_iter=5000,dual=False,fit_intercept=False)
+#model = SVC(C=25.0,gamma=0.00001)  #C=25.0,gamma=0.0001)
 #model = KNeighborsClassifier(n_neighbors=3)
 #model = DecisionTreeClassifier(max_depth=50)
 #model = RandomForestClassifier(n_estimators=100)
@@ -98,5 +103,5 @@ cr=metrics.classification_report(Y_test,Y_predict)
 print("Classification Report:")
 print(cr)
 
-#print(model.decision_function(X_test))
-#print(model._predict_proba_lr(X_test))
+print(model.decision_function(X_test))
+print(model._predict_proba_lr(X_test))
