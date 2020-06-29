@@ -14,29 +14,31 @@ CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 
-RECORD_SECONDS= 1
+RECORD_SECONDS= 2
 MAX_PLOT_SIZE = CHUNK * 50
 DATA = 0
 
 FEED_DURATION = 2
 FEED_SAMPLES = int(RATE * FEED_DURATION)
 
-keyword_list={"avancar", "baixo ", "centro", "cima", "direita", "esquerda", "parar", "recuar"}
+keyword_list={"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
 speaker_list={"G1","G2","G3","G4","G5","G6","G7","G8"}
 
+# Keyword Scaler/Model
 scaler_keyword = StandardScaler()
-scaler_keyword = pickle.load(open("result/scaler_keyword.bin", "rb"))
-model_keyword = MLPClassifier()
-model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
+scaler_keyword = pickle.load(open("audio_utils/scaler_keyword_aug.bin", "rb"))
+#model_keyword = MLPClassifier()
+#model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
 OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
-OvR_model_keyword = pickle.load(open("result/new_OvR_mlp_classifier_keyword.model", "rb"))
+OvR_model_keyword = pickle.load(open("audio_utils/classifier_keyword_OvR_aug.model", "rb"))
 
+# Speaker Scaler/Model
 scaler_speaker = StandardScaler()
-scaler_speaker = pickle.load(open("result/scaler_speaker.bin", "rb"))
-model_speaker = MLPClassifier()
-model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
+scaler_speaker = pickle.load(open("audio_utils/scaler_speaker_aug.bin", "rb"))
+#model_speaker = MLPClassifier()
+#model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
 OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker = pickle.load(open("result/new_OvR_mlp_classifier_speaker.model", "rb"))
+OvR_model_speaker = pickle.load(open("audio_utils/classifier_speaker_OvR_aug.model", "rb"))
 
 
 class Audio:
@@ -95,8 +97,9 @@ class Audio:
         result = np.hstack((result, chroma))
         mel = np.mean(librosa.feature.melspectrogram(X, sr=RATE).T, axis=0)
         result = np.hstack((result, mel))
-        keyword_temp.append(result)
-        keyword_normalized = scaler_keyword.transform(keyword_temp)
+        keyword_normalized = scaler_keyword.transform(result.reshape(1,-1))
+        #keyword_temp.append(result)
+        #keyword_normalized = scaler_keyword.transform(keyword_temp)
         return keyword_normalized
 
     def extract_features_speaker(self, X):
@@ -110,8 +113,9 @@ class Audio:
         result = np.hstack((result, chroma))
         mel = np.mean(librosa.feature.melspectrogram(X, sr=RATE).T, axis=0)
         result = np.hstack((result, mel))
-        speaker_temp.append(result)
-        speaker_normalized = scaler_speaker.transform(speaker_temp)
+        speaker_normalized = scaler_speaker.transform(result.reshape(1, -1))
+        #speaker_temp.append(result)
+        #speaker_normalized = scaler_speaker.transform(speaker_temp)
         return speaker_normalized
 
     def realtime_predict(self, keyword, speaker):

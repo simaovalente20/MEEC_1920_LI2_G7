@@ -11,27 +11,21 @@ from joblib import dump,load
 from sklearn.preprocessing import StandardScaler
 from sklearn import metrics
 
-word_command = {"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
+model_params = {
+    'alpha': 0.01,
+    'batch_size': 256,
+    'epsilon': 1e-08,
+    'hidden_layer_sizes': (300,),
+    'learning_rate': 'adaptive',
+    'max_iter': 500,
+}
 
 #DataFlair - Extract features (mfcc, chroma, mel) from a sound file
 def extract_feature(file_name, **kwargs):
-    """
-        Extract feature from audio file `file_name`
-            Features supported:
-                - MFCC (mfcc)
-                - Chroma (chroma)
-                - MEL Spectrogram Frequency (mel)
-                - Contrast (contrast)
-                - Tonnetz (tonnetz)
-            e.g:
-            `features = extract_feature(path, mel=True, mfcc=True)`
-    """
     mfcc = kwargs.get("mfcc")
     chroma = kwargs.get("chroma")
     mel = kwargs.get("mel")
     contrast = kwargs.get("contrast")
-    tonnetz = kwargs.get("tonnetz")
-
     with soundfile.SoundFile(file_name) as sound_file:
         X = sound_file.read(dtype="float32")
         sample_rate = sound_file.samplerate
@@ -78,14 +72,17 @@ scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
 scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
-pickle.dump(scaler,open('result/scaler_speaker.bin','wb'))
+
+if not os.path.isdir("audio_utils"):
+    os.mkdir("audio_utils")
+pickle.dump(scaler,open('audio_utils/scaler_speaker.bin','wb'))
 
 
 print("[+] Number of training samples:", X_train.shape[0])
 print("[+] Number of testing samples:", X_test.shape[0])
 print("[+] Number of features:", X_train.shape[1])
 
-model = MLPClassifier(alpha=0.01, batch_size=256, epsilon=1e-08, hidden_layer_sizes=(300,), learning_rate='adaptive',max_iter=500)
+model = MLPClassifier(**model_params)
 
 print("[*] Training the model...")
 clf = OneVsRestClassifier(model)
@@ -114,8 +111,8 @@ print("Classification Report:")
 print(cr)
 
 # save the model
-if not os.path.isdir("result"):
-    os.mkdir("result")
-pickle.dump(clf, open("result/OvR_mlp_classifier_speaker.model", "wb"))
+if not os.path.isdir("audio_utils"):
+    os.mkdir("audio_utils")
+pickle.dump(clf, open("audio_utils/classifier_speaker_OvR.model", "wb"))
 
 stop=0

@@ -24,9 +24,7 @@ def img2pixmap(image):
 # Cyclic capture image
 def grabFrame():
     cap=cam.capture()
-
     image=cam.classify(cap)
-
     window.label_videoCam.setPixmap(img2pixmap(image))
 
 # Cyclic capture sound
