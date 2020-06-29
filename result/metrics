@@ -1,0 +1,43 @@
+
+
+#####
+Keyword OvR
+
+[+] Number of training samples: 956
+[+] Number of testing samples: 319
+[+] Number of features: 180
+[*] Training the model...
+Confusion Matrix:
+[[41  0  0  1  0  0  0  0]
+ [ 0 40  1  0  0  0  0  0]
+ [ 0  0 40  1  0  0  0  0]
+ [ 0  0  0 37  0  1  0  0]
+ [ 0  0  0  0 37  0  0  0]
+ [ 0  0  1  0  0 40  1  0]
+ [ 0  0  0  0  0  1 39  0]
+ [ 0  1  0  0  0  0  1 36]]
+Precision Recall Fscor Support:
+(array([1.        , 0.97560976, 0.95238095, 0.94871795, 1.        ,
+       0.95238095, 0.95121951, 1.        ]), array([0.97619048, 0.97560976, 0.97560976, 0.97368421, 1.        ,
+       0.95238095, 0.975     , 0.94736842]), array([0.98795181, 0.97560976, 0.96385542, 0.96103896, 1.        ,
+       0.95238095, 0.96296296, 0.97297297]), array([42, 41, 41, 38, 37, 42, 40, 38], dtype=int64))
+Accuracy:
+0.9717868338557993
+Classification Report:
+              precision    recall  f1-score   support
+
+     Avancar       1.00      0.98      0.99        42
+       Baixo       0.98      0.98      0.98        41
+      Centro       0.95      0.98      0.96        41
+        Cima       0.95      0.97      0.96        38
+     Direita       1.00      1.00      1.00        37
+    Esquerda       0.95      0.95      0.95        42
+       Parar       0.95      0.97      0.96        40
+      Recuar       1.00      0.95      0.97        38
+
+    accuracy                           0.97       319
+   macro avg       0.97      0.97      0.97       319
+weighted avg       0.97      0.97      0.97       319
+
+
+Process finished with exit code 0
