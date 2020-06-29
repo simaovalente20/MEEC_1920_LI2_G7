@@ -39,7 +39,7 @@ for i in range(1,nGrupos+1):
         # 5- Escurecer Imagem (Change Brilho)
         contrast = iaa.GammaContrast(gamma=1.5)
         contrast_image = contrast.augment_image(image)
-        imageio.imwrite('Dataset/images/G%d_%d_5.jpg' % (i, j), contrast_image)
+        imageio.imwrite('Dataset/images/G%d_%d_5.jpg' % (i, j), image)
 
         # 6 - Enclarecer imagem
         contrast = iaa.GammaContrast(gamma=0.5)
