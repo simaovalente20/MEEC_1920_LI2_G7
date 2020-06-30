@@ -1,28 +1,26 @@
 
-import sys, os, glob, pickle
+import sys, os, glob, pickle,time
 import pyaudio
 import wave
 import librosa
 import sounddevice
 import numpy as np
+import matplotlib.pyplot as plt
+import soundfile as sf
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
+import struct
+
+FILENAME = "z_file.wav"
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
-
 RECORD_SECONDS= 2
+
 MAX_PLOT_SIZE = CHUNK * 50
-DATA = 0
-
-FEED_DURATION = 2
-FEED_SAMPLES = int(RATE * FEED_DURATION)
-
-keyword_list={"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
-speaker_list={"G1","G2","G3","G4","G5","G6","G7","G8"}
 
 # Keyword Scaler/Model
 scaler_keyword = StandardScaler()
@@ -30,7 +28,7 @@ scaler_keyword = pickle.load(open("audio_utils/scaler_keyword_aug.bin", "rb"))
 #model_keyword = MLPClassifier()
 #model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
 OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
-OvR_model_keyword = pickle.load(open("audio_utils/classifier_keyword_OvR_aug.model", "rb"))
+OvR_model_keyword = pickle.load(open("audio_utils/classifier_keyword_2class_OvR_aug.model", "rb"))
 
 # Speaker Scaler/Model
 scaler_speaker = StandardScaler()
@@ -38,17 +36,23 @@ scaler_speaker = pickle.load(open("audio_utils/scaler_speaker_aug.bin", "rb"))
 #model_speaker = MLPClassifier()
 #model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
 OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker = pickle.load(open("audio_utils/classifier_speaker_OvR_aug.model", "rb"))
+OvR_model_speaker = pickle.load(open("audio_utils/classifier_speaker_2class_OvR_aug.model", "rb"))
 
 
 class Audio:
     def __init__(self):
         self.audio = pyaudio.PyAudio()
         self.frames = []
+        self.counter = 0
         pass
 
     def open(self):
         self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+
+    def start(self):
+        self.stream.start_stream()
+        while self.stream.is_active():
+            time.sleep(0.1)
 
     def record(self):
         self.frames.append(self.stream.read(CHUNK))
@@ -67,22 +71,37 @@ class Audio:
         waveFile.writeframes(b''.join(self.frames))
         waveFile.close()
 
+    def callback(self, in_data, frame_count, time_info, flag):
+        if flag:
+            print("Playback Error: %i" % flag)
+
+        #played_frames = self.counter
+        #self.counter += frame_count
+        #return signal[played_frames:self.counter], pyaudio.paContinue
+        return (in_data, pyaudio.paContinue)
+
     def get_audio_input_stream(self):
-        self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
 
         print("* recording")
         for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
             data = self.stream.read(CHUNK)
             self.frames.append(data)
-        print("* done recording")
+
+        print(int(RATE / CHUNK * RECORD_SECONDS))
+        print("finished recording")
+
+        # Unpack data using struct
+        #unpack_data = (struct.unpack('h' * chunk, data))
 
         self.stream.stop_stream()
         self.stream.close()
         self.audio.terminate()
+        self.save(FILENAME)
 
-        self.frames = sounddevice.rec(FEED_SAMPLES, samplerate=RATE, channels=2)
+        '''print("* recording")
+        frames_mono = sounddevice.rec(int(RATE * FEED_DURATION), samplerate=RATE, channels=1,dtype='float32')
         sounddevice.wait()
-        self.frames = librosa.to_mono(self.frames)
+        print("finished recording")'''
 
         return self.frames
 

@@ -1,4 +1,5 @@
 import sys
+import soundfile as sf
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QTimer, qVersion
@@ -7,11 +8,14 @@ import video
 import audio
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget, plot
+import matplotlib.pyplot as plt
+import threading
 
 #TODO threading for performance improvement
 #TODO Remove mic close error
 #TODO spectogram graph (Qt Combo Box)
 
+FILENAME = "z_file.wav"
 
 # Convert a Mat to a Pixmap
 def img2pixmap(image):
@@ -31,10 +35,10 @@ def grabFrame():
 def recording():
     global mic, total_data, max_hold
     raw_data = mic.record()
+    #raw_data = mic.get_audio_input_stream()
     '''PyQtGraph plot'''
     data_sample = np.fromstring(raw_data, dtype=np.int16) #convert raw bytes to interger
     total_data = np.concatenate([total_data, data_sample])
-
     if len(total_data) > audio.MAX_PLOT_SIZE:
         total_data = total_data[audio.CHUNK:]
     audio_waveform.setData(total_data)
@@ -51,20 +55,25 @@ def on_cameraOFF_clicked():
 
 # Starts sound capture
 def on_micOn_clicked():
-    #mic.open()
+    mic.open()
+    #qtimerRecord.start()
     clip = mic.get_audio_input_stream()
-    keyword = mic.extract_features_keyword(clip)
-    speaker = mic.extract_features_speaker(clip)
+    sound_clip , sample_rate = sf.read(FILENAME)
+    keyword = mic.extract_features_keyword(sound_clip)
+    speaker = mic.extract_features_speaker(sound_clip)
     keyword_prd , speaker_prd = mic.realtime_predict(keyword,speaker)
     print(keyword_prd)
     print(speaker_prd)
-    qtimerRecord.start()
+
+    '''PyQtGraph plot'''
+    audio_waveform.setData(sound_clip)
 
 # Stops sound capture
 def on_micOff_clicked():
     qtimerRecord.stop()
     mic.close()
     mic.save("file.wav")
+
 
 # Creation of the camera
 cam = video.Video()
