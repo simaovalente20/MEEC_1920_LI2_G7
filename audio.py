@@ -11,6 +11,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 import struct
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero
 
 FILENAME = "other_sounds/z_file.wav"
 
@@ -29,6 +30,15 @@ scaler_keyword = pickle.load(open("audio_utils/scaler_keyword_aug.bin", "rb"))
 #model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
 OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
 OvR_model_keyword = pickle.load(open("audio_utils/classifier_keyword_2class_OvR_aug.model", "rb"))
+
+OvR_model_keyword_augmented = OneVsRestClassifier(MLPClassifier())
+OvR_model_keyword_augmented = pickle.load(open("utils_audio/classifier_keyword_aug.model", "rb"))
+scaler_keyword_augmented = StandardScaler()
+scaler_keyword_augmented = pickle.load(open("utils_audio/scaler_keyword_aug.bin", "rb"))
+OvR_model_speaker_augmented = OneVsRestClassifier(MLPClassifier())
+OvR_model_speaker_augmented = pickle.load(open("utils_audio/classifier_speaker_OvR_aug.model", "rb"))
+scaler_speaker_augmented = StandardScaler()
+scaler_speaker_augmented = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
 
 # Speaker Scaler/Model
 scaler_speaker = StandardScaler()
@@ -148,3 +158,45 @@ class Audio:
 
         return keyword_result, speaker_result
 
+    def extract_features_keyword_augmented(self, X, sr):
+        speaker_normalized=[]
+
+        features = extract_feature(X, sr, mfcc=True, chroma=True, mel=True)
+        speaker_normalized.append(features)
+
+        frame_shift = aug_shift_zero(X, sr, 0.2, shift_direction='both')
+        features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+        speaker_normalized.append(features)
+
+        frame_slower = aug_speed(X, 0.9)
+        features = extract_feature(frame_slower, sr, mfcc=True, chroma=True, mel=True)
+        speaker_normalized.append(features)
+
+        frame_faster = aug_speed(X, 1.1)
+        features = extract_feature(frame_faster, sr, mfcc=True, chroma=True, mel=True)
+        speaker_normalized.append(features)
+
+        return speaker_normalized
+
+    def extract_features_speaker_augmented(self, X, sr):
+        speaker_normalized = []
+
+        features = extract_feature(X, sr, mfcc=True, chroma=True, mel=True)
+        speaker_normalized.append(features)
+
+        frame_shift = aug_shift_zero(X, sr, 0.2, shift_direction='both')
+        features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+        speaker_normalized.append(features)
+
+        return speaker_normalized
+
+    def realtime_predict_augmented(self, keyword, speaker):
+        speaker_normalized = scaler_speaker_augmented.transform(speaker)
+        keyword_normalized = scaler_keyword_augmented.transform(keyword)
+        keyword_prediction = OvR_model_keyword_augmented.predict(keyword_normalized)
+        speaker_prediction = OvR_model_speaker_augmented.predict(speaker_normalized)
+
+        keyword_result = keyword_prediction[0]
+        speaker_result = speaker_prediction[0]
+
+        return keyword_result, speaker_result

@@ -17,13 +17,13 @@ le = LabelEncoder()
 def load_data(test_size = 0.2):
     x, y = [], []
     empty_files = []
-    for base_path in glob.glob("Dataset\speaker\G*"):
-        print(base_path.split("\\")[1])
+    for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
+        print(base_path.split("\\")[2])
         for file in glob.glob(base_path + "\*.wav"):
             basename = os.path.basename(file)   # get the base name of the audio file
-            #print("Grupo " + base_path)
+            print("Grupo " + base_path)
             keyword = basename.split("_")[1]
-            print(base_path.split("\\")[2] + "-" + keyword)
+            #print(base_path.split("\\")[3] + "-" + keyword)
             # remove empty files (G1)
             sound_file = soundfile.SoundFile(file)
             if len(sound_file.read(dtype='float32')) == 0:
@@ -32,13 +32,17 @@ def load_data(test_size = 0.2):
                 continue
             # Raw wave
             sound_frame, sr = read_sounfile(file)
+            sd.play(sound_frame, sr)
             features = extract_feature(sound_frame,sr,mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
             y.append(keyword)
             # Time Shift with padding
             frame_shift = aug_shift_zero(sound_frame,sr,0.2,shift_direction='both')
+            sd.play(frame_shift, sr)
             #sd.play(frame_shift, sr)
             features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
             y.append(keyword)
             # Add Noise
@@ -53,21 +57,23 @@ def load_data(test_size = 0.2):
                 # y.append(keyword)
             # Speed Slower
             frame_slower = aug_speed(sound_frame,0.9)
-            #sd.play(frame_slower, sr)
+            sd.play(frame_slower, sr)
             features = extract_feature(frame_slower, sr, mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
             y.append(keyword)
             # Speed Faster
             frame_faster = aug_speed(sound_frame,1.1)
             #sd.play(frame_faster, sr)
             features = extract_feature(frame_faster, sr, mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
             y.append(keyword)
     le.fit(y)
     list(le.classes_)
     yt=le.transform(y)
 
-    return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
+    return train_test_split(np.array(x), y, test_size=test_size, stratify=y,random_state=True)
 
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)
 

@@ -15,12 +15,12 @@ from y_audio_utils import read_sounfile, extract_feature,extract_feature_speaker
 def load_data(test_size = 0.2):
     x, y = [], []
     empty_files = []
-    for base_path in glob.glob("Dataset\speaker\G*"):
-        print("###################" + base_path.split("\\")[1])
+    for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):#Dataset\speaker\G*"):
+        print("###################" + base_path.split("\\")[2])
         for file in glob.glob(base_path + "\*.wav"):
             basename = os.path.basename(file)   # get the base name of the audio file
             #print("Grupo " + base_path)
-            speaker = base_path.split("\\")[2]
+            speaker = base_path.split("\\")[3]
             print(speaker)
             # remove empty files (G1)
             sound_file = soundfile.SoundFile(file)
@@ -58,7 +58,8 @@ def load_data(test_size = 0.2):
                 # features = extract_feature_speaker(frame_faster, sr, mfcc=True,chroma=True)
                 # x.append(features)
                 # y.append(speaker)
-    return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
+    #return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
+    return train_test_split(np.array(x), y, test_size=0.2, stratify = y, random_state=True)
 
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)
 
