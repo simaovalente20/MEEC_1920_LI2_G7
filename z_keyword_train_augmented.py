@@ -32,11 +32,10 @@ def load_data(test_size = 0.2):
                 continue
             # Raw wave
             sound_frame, sr = read_sounfile(file)
-            #sd.play(sound_frame, sr)
             features = extract_feature(sound_frame,sr,mfcc=True, chroma=True, mel=True)
             x.append(features)
             y.append(keyword)
-            # Shift
+            # Time Shift with padding
             frame_shift = aug_shift_zero(sound_frame,sr,0.2,shift_direction='both')
             #sd.play(frame_shift, sr)
             features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)

@@ -1,0 +1,31 @@
+
+Os scaler são armazenados em 2 versoes: normal / data augmented
+ 
+Para cada teste é armazenado o modelo
+______________________________________________
+Z-keyword_train : treino dos comandos nos ficheiros originais(MLPclassifier/OneVsRest(MLP))
+
+z_keyword_train_2class : treino com as class divididas em 2 (Baixo e Não-Baixo).(MLPclassifier/OneVsRest(MLP))
+
+z_keywortd_train_augmented: treino dos comandos com data augmentation (MLPclassifier/OneVsRest(MLP))
+
+z_keywortd_train_2class_augmented: treino com as class divididas em 2 (Baixo e Não-Baixo).(MLPclassifier/OneVsRest(MLP))
+
+
+Speaker : equivalente (G7 e Nao_G7)
+
+__________________________________________
+y_audio_utils: guarda as funçoes leitura de ficheiro, extraçao de features e data augmentation
+
+__________________________________________
+z_teste_wave: teste de um ficheiro . wav pré gravado (modificar extract_features para igualar os treinos)
+
+__________________________________________
+Pasta audio_utils: guarda os testes iniciais e que foram testados no dia 01/04
+  '->os frames são o padrao do librosa +- 46ms
+
+Pasta utils_audio : Guar os testes atuais(04/07)
+    '->os frames ssão de 23ms(1024/441000)
+
+__________________________________________
+z_temp: utilizado para debug espontaneos
