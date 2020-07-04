@@ -9,30 +9,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
-
-
-#DataFlair - Extract features (mfcc, chroma, mel) from a sound file
-def extract_feature(file_name, **kwargs):
-    mfcc = kwargs.get("mfcc")
-    chroma = kwargs.get("chroma")
-    mel = kwargs.get("mel")
-    contrast = kwargs.get("contrast")
-    with soundfile.SoundFile(file_name) as sound_file:
-        X = sound_file.read(dtype="float32")
-        sample_rate = sound_file.samplerate
-        if chroma or contrast:
-            stft = np.abs(librosa.stft(X))
-        result = np.array([])
-        if mfcc:
-            mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40).T, axis=0)
-            result = np.hstack((result, mfccs))
-        if chroma:
-            chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)
-            result = np.hstack((result, chroma))
-        if mel:
-            mel = np.mean(librosa.feature.melspectrogram(X, sr=sample_rate).T,axis=0)
-            result = np.hstack((result, mel))
-    return result
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise
 
 
 def load_data(test_size = 0.2):
@@ -51,7 +28,9 @@ def load_data(test_size = 0.2):
                 print("Empty File : " + file)
                 empty_files.append(file)
                 continue
-            features = extract_feature(file,mfcc=True,chroma=True, mel=True)
+            sound_frame, sr = read_sounfile(file)
+            features = extract_feature(sound_frame, sr, mfcc=True, chroma=True, mel=True)
+            #features = extract_feature(file,mfcc=True,chroma=True, mel=True)
             x.append(features)
             y.append(base_class)
             print(i)
@@ -68,9 +47,9 @@ scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
 
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(scaler, open('audio_utils/scaler_speaker_2class.bin','wb'))
+if not os.path.isdir("utils_audio"):
+    os.mkdir("utils_audio")
+pickle.dump(scaler, open('utils_audio/scaler_speaker_2class.bin','wb'))
 
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
 print("[+] Number of testing samples:", X_test.shape[0]) # number of samples in testing data
@@ -108,8 +87,8 @@ print(cr)
 
 # now we save the model
 # make result directory if doesn't exist yet
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(clf, open("audio_utils/classifier_speaker_2class_OvR.model", "wb"))
+if not os.path.isdir("utils_audio"):
+    os.mkdir("utils_audio")
+pickle.dump(clf, open("utils_audio/classifier_speaker_2class_OvR.model", "wb"))
 
 stop=0

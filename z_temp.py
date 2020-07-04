@@ -2,6 +2,7 @@ import pyaudio
 import wave
 import soundfile
 import librosa
+import librosa.display
 import sounddevice as sd
 import numpy as np
 import os, glob, pickle
@@ -10,48 +11,45 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
-from y_audio_aug import aug_pitch,aug_add_noise,aug_speed,plot_time_series
-
-
-'''Example'''
-#TODO: https://www.thepythoncode.com/article/building-a-speech-emotion-recognizer-using-sklearn
-
-word_command = {"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
-
+from y_audio_utils import aug_pitch,aug_add_noise,aug_speed,plot_time_series,aug_shift_zero
+import matplotlib.pyplot as plt
 
 def read_sounfile(filename):
     with soundfile.SoundFile(filename) as sound_file:
         X = sound_file.read(dtype="float32")
         sample_rate = sound_file.samplerate
+    # trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
+    #print(librosa.get_duration(X, sample_rate), librosa.get_duration(trimmed, sr=sample_rate))
+    # plot_time_series(trimmed,sample_rate)
+    #sd.play(trimmed, sample_rate)
     return X,sample_rate
 
+'''
+Resample
+Y_16k = librosa.resample(X, sample_rate, 16000)
+Trim
+trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
+print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
+plot_time_series(trimmed,sample_rate)
+sd.play(trimmed, sample_rate)
+'''
 #DataFlair - Extract features (mfcc, chroma, mel) from a sound file
 def extract_feature(X, sample_rate, **kwargs):
     mfcc = kwargs.get("mfcc")
     chroma = kwargs.get("chroma")
     mel = kwargs.get("mel")
-    stft = np.abs(librosa.stft(X))
+    stft = np.abs(librosa.stft(X,n_fft=1024))
     result = np.array([])
-    ''''''
-    # Resample
-    Y_16k = librosa.resample(X, sample_rate, 16000)
-    # Trim
-    trimmed, index = librosa.effects.trim(Y_16k, top_db=30, frame_length=256, hop_length=64)
-    print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=16000))
-    #plot_time_series(trimmed,16000)
-    #sd.play(trimmed, 16000)
-    ''''''
-    if mfcc:
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40).T, axis=0)
+    if mfcc: #Mel-frequency cepstral coefficients (MFCCs)
+        mfccs = np.stack(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=12, n_fft= 1024).T, axis=0) #temporal averaging
         result = np.hstack((result, mfccs))
-    if chroma:
-        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)
+    if chroma: # Compute a chromagram from a waveform or power spectrogram.
+        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, chroma))
-    if mel:
-        mel = np.mean(librosa.feature.melspectrogram(X, sr=sample_rate).T,axis=0)
+    if mel: # Mel-scaled spectrogram
+        mel = np.mean(librosa.feature.melspectrogram(X,n_fft=1024, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, mel))
     return result
-
 
 def load_data(test_size = 0.2):
     x, y = [], []
@@ -69,12 +67,19 @@ def load_data(test_size = 0.2):
                 print("Empty File : " + file)
                 empty_files.append(file)
                 continue
-
             print(basefile)
             # Raw wave
             sound_frame, sr = read_sounfile(file)
             print("Raw Wave")
             features = extract_feature(sound_frame, sr, mfcc=True, chroma=True, mel=True)
+            x.append(features)
+            y.append(base_class)
+            # Shift
+            frame_shift = aug_shift_zero(sound_frame,sr,0.2,shift_direction='both')
+            print("Shifted Wave")
+            plot_time_series(frame_shift, sr)
+            sd.play(frame_shift, sr)
+            features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
             x.append(features)
             y.append(base_class)
             # Add Noise
@@ -83,11 +88,11 @@ def load_data(test_size = 0.2):
                 # x.append(features)
                 # y.append(keyword)
             # Pitch
-            frame_pitch = aug_pitch(sound_frame, sr, 0.4)
-            print("Pitch Wave")
-            features = extract_feature(frame_pitch, sr, mfcc=True, chroma=True, mel=True)
-            x.append(features)
-            y.append(base_class)
+                # frame_pitch = aug_pitch(sound_frame, sr, 0.4)
+                # print("Pitch Wave")
+                # features = extract_feature(frame_pitch, sr, mfcc=True, chroma=True, mel=True)
+                # x.append(features)
+                # y.append(base_class)
             # Speed Slower
             frame_slower = aug_speed(sound_frame, 0.9)
             print("Slower Wave")
@@ -114,11 +119,6 @@ scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
 scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
-
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(scaler, open('audio_utils/scaler_2class_augmented_keyword.bin','wb'))
-
 
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
 print("[+] Number of testing samples:", X_test.shape[0]) # number of samples in testing data
@@ -153,11 +153,5 @@ print(accuracy)
 cr=metrics.classification_report(Y_test,Y_predict)
 print("Classification Report:")
 print(cr)
-
-# now we save the model
-# make result directory if doesn't exist yet
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(clf, open("audio_utils/classifier_keyword_2class_OvR_aug.model", "wb"))
 
 stop=0

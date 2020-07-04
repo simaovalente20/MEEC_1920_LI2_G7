@@ -9,38 +9,14 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
-from y_audio_aug import aug_pitch,aug_add_noise,aug_speed
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise
+
 '''Example'''
 #TODO: https://www.thepythoncode.com/article/building-a-speech-emotion-recognizer-using-sklearn
 #word_command = {"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
 
 word_command = {"baixo", "nao_baixo"}
 le = LabelEncoder()
-
-def read_sounfile(filename):
-    with soundfile.SoundFile(filename) as sound_file:
-        X = sound_file.read(dtype="float32")
-        sample_rate = sound_file.samplerate
-    return X,sample_rate
-
-#DataFlair - Extract features (mfcc, chroma, mel) from a sound file
-def extract_feature(X, sample_rate, **kwargs):
-    mfcc = kwargs.get("mfcc")
-    chroma = kwargs.get("chroma")
-    mel = kwargs.get("mel")
-
-    stft = np.abs(librosa.stft(X))
-    result = np.array([])
-    if mfcc:
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40).T, axis=0)
-        result = np.hstack((result, mfccs))
-    if chroma:
-        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)
-        result = np.hstack((result, chroma))
-    if mel:
-        mel = np.mean(librosa.feature.melspectrogram(X, sr=sample_rate).T,axis=0)
-        result = np.hstack((result, mel))
-    return result
 
 def load_data(test_size = 0.2):
     x, y = [], []
@@ -90,9 +66,7 @@ def load_data(test_size = 0.2):
     yt=le.transform(y)
     return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
 
-
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)
-
 
 #https://scikit-learn.org/stable/modules/neural_networks_supervised.html#tips-on-practical-use
 scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
@@ -100,9 +74,9 @@ scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
 
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(scaler, open('audio_utils/scaler_keyword_2class_augmented.bin','wb'))
+if not os.path.isdir("utils_audio"):
+    os.mkdir("utils_audio")
+pickle.dump(scaler, open('utils_audio/scaler_keyword_2class_augmented.bin','wb'))
 
 
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
@@ -115,7 +89,6 @@ print("[*] Training the model...")
 #model.fit(X_train,Y_train)
 
 clf = OneVsRestClassifier(model)
-
 clf= clf.fit(X_train, Y_train)
 
 # predict 25% of data to measure how good we are
@@ -130,7 +103,6 @@ prfs = metrics.precision_recall_fscore_support(Y_test, Y_predict)
 print("Precision Recall Fscor Support:")
 print(prfs)
 
-
 accuracy = metrics.accuracy_score(Y_test,Y_predict)
 print("Accuracy:")
 print(accuracy)
@@ -141,9 +113,9 @@ print(cr)
 
 # now we save the model
 # make result directory if doesn't exist yet
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(clf, open("audio_utils/classifier_keyword_2class_OvR_aug.model", "wb"))
+if not os.path.isdir("utils_audio"):
+    os.mkdir("utils_audio")
+pickle.dump(clf, open("utils_audio/classifier_keyword_2class_OvR_aug.model", "wb"))
 
 print(le.classes_)
 stop=0

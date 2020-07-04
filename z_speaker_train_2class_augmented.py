@@ -9,34 +9,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
-from y_audio_aug import aug_pitch,aug_add_noise,aug_speed
-
-
-def read_sounfile(filename):
-    with soundfile.SoundFile(filename) as sound_file:
-        X = sound_file.read(dtype="float32")
-        sample_rate = sound_file.samplerate
-    return X,sample_rate
-
-#DataFlair - Extract features (mfcc, chroma, mel) from a sound file
-def extract_feature(X, sample_rate, **kwargs):
-    mfcc = kwargs.get("mfcc")
-    chroma = kwargs.get("chroma")
-    mel = kwargs.get("mel")
-
-    stft = np.abs(librosa.stft(X))
-    result = np.array([])
-    if mfcc:
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40).T, axis=0)
-        result = np.hstack((result, mfccs))
-    if chroma:
-        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)
-        result = np.hstack((result, chroma))
-    if mel:
-        mel = np.mean(librosa.feature.melspectrogram(X, sr=sample_rate).T,axis=0)
-        result = np.hstack((result, mel))
-    return result
-
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise
 
 def load_data(test_size = 0.2):
     x, y = [], []
@@ -93,9 +66,9 @@ scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
 
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(scaler, open('audio_utils/scaler_speaker_2class_aug.bin','wb'))
+if not os.path.isdir("utils_audio"):
+    os.mkdir("utils_audio")
+pickle.dump(scaler, open('utils_audio/scaler_speaker_2class_aug.bin','wb'))
 
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
 print("[+] Number of testing samples:", X_test.shape[0]) # number of samples in testing data
@@ -133,8 +106,8 @@ print(cr)
 
 # now we save the model
 # make result directory if doesn't exist yet
-if not os.path.isdir("audio_utils"):
-    os.mkdir("audio_utils")
-pickle.dump(clf, open("audio_utils/classifier_speaker_2class_OvR_aug.model", "wb"))
+if not os.path.isdir("utils_audio"):
+    os.mkdir("utils_audio")
+pickle.dump(clf, open("utils_audio/classifier_speaker_2class_OvR_aug.model", "wb"))
 
 stop=0

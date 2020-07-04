@@ -86,7 +86,6 @@ class Audio:
         for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
             data = self.stream.read(CHUNK)
             self.frames.append(data)
-
         print(int(RATE / CHUNK * RECORD_SECONDS))
         print("finished recording")
 
@@ -95,7 +94,6 @@ class Audio:
 
         self.stream.stop_stream()
         self.stream.close()
-        self.audio.terminate()
         self.save(FILENAME)
 
         '''print("* recording")
