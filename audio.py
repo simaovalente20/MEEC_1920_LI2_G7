@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 import struct
 
-FILENAME = "z_file.wav"
+FILENAME = "other_sounds/z_file.wav"
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1

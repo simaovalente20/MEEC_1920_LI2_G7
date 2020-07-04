@@ -15,7 +15,7 @@ import threading
 #TODO Remove mic close error
 #TODO spectogram graph (Qt Combo Box)
 
-FILENAME = "z_file.wav"
+FILENAME = "other_sounds/z_file.wav"
 
 # Convert a Mat to a Pixmap
 def img2pixmap(image):

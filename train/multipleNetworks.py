@@ -402,7 +402,7 @@ X_test7 = scaler.transform(X_test7)
 X_train8 = scaler.transform(X_train8)
 X_test8 = scaler.transform(X_test8)
 
-pickle.dump(scaler, open('Scaler.sav', 'wb'))
+pickle.dump(scaler, open('../Scaler.sav', 'wb'))
 
 
 # model = SVC(C=25.0,gamma=0.00001)  #C=25.0,gamma=0.0001)
