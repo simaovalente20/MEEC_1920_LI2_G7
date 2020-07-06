@@ -40,11 +40,9 @@ def recording():
     '''PyQtGraph plot'''
     # data_sample = np.fromstring(raw_data, dtype=np.int16) #convert raw bytes to interger
     #total_data = np.concatenate([total_data, data_sample])
-
     amplitude = np.hstack(raw_data)
     if len(amplitude) > audio.MAX_PLOT_SIZE:
         amplitude = amplitude[audio.CHUNK:]
-
     audio_waveform.setData(amplitude)
 
 # Starts image capture
@@ -60,8 +58,7 @@ def on_cameraOFF_clicked():
 # Starts sound capture
 def on_micOn_clicked():
     mic.open()
-    #qtimerRecord.start()
-
+    qtimerRecord.start()
     '''clip = mic.get_audio_input_stream()
     sound_clip , sample_rate = sf.read(FILENAME)
     #keyword = mic.extract_features_keyword(sound_clip)
@@ -81,7 +78,6 @@ def on_micOff_clicked():
     qtimerRecord.stop()
     mic.close()
     mic.save("file.wav")
-
 
 # Creation of the camera
 cam = video.Video()

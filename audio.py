@@ -62,8 +62,10 @@ class Audio:
         self.frame_buffer = []
         self.counter = 0
         self.lock = threading.Lock()
+      #self.thread_class = threading.Thread(target=self.prd_complete(arg=[frames]))
         self.stop = False
         self.d=deque(maxlen=QUEUE_TIME)
+        self.i = 0
         pass
 
     def open(self):
@@ -80,16 +82,10 @@ class Audio:
         self.frames.append(self.stream.read(CHUNK))
         return self.stream.read(CHUNK)
 
-    '''def close(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        #self.audio.terminate()'''
-
     def close(self):
         with self.lock:
             self.stop = True
         self.stream.close()
-        #self.audio.terminate()
 
     def save(self,file):
         waveFile = wave.open(file,'wb')
@@ -124,7 +120,7 @@ class Audio:
         with self.lock:
             frames = self.frames
             self.frames = []
-        return frames
+        return self.frame_buffer
 
     def new_frame(self, in_data, frame_count, time_info, flag):
         if flag:
@@ -132,34 +128,43 @@ class Audio:
         print("Callback...")
         print(len(in_data))
         data = np.fromstring(in_data, np.float32)
-        amplitude = np.hstack(data)
-        #print(amplitude)
-        self.frame_buffer.append(amplitude)
-        # If 2s worth of audio is collected, copy to secondary buffer and pass to thread function
-        if len(self.frame_buffer) >= 20:
-            frames = copy.copy(self.frame_buffer)
-            thread = threading.Thread(target=self.prd_complete(arg=[frames]))
-            thread.start()
-            self.frame_buffer.clear()
-            #self.d.clear()
-            print("2s Buffer")
-        #print(len(self.d))
-        #played_frames = self.counter
-        #self.counter += frame_count
-        #return signal[played_frames:self.counter], pyaudio.paContinue
+        self.prd_complete(data)
         return in_data, pyaudio.paContinue
 
     def prd_complete(self,arg):
         print("*****************************************")
-        #print(arg)
-        data = np.hstack(arg)
-        print(len(data))
-        #return data
-        #self.extract_features_speaker(clip)
-        #self.extract_features_keyword(clip)
-        # keyword = mic.extract_features_keyword(sound_clip)
-        # speaker = mic.extract_features_speaker(sound_clip)
-        # keyword_prd , speaker_prd = mic.realtime_predict(keyword,speaker)
+        self.frame_buffer.append(arg)
+        #print(self.frame_buffer)
+
+        #if self.i == 0:
+        if len(self.frame_buffer) == 80:
+            frames = copy.copy(self.frame_buffer)
+            print(len(frames)) #Fazer classificação
+            data = np.hstack(frames)
+            #data = np.concatenate(frames,axis=None)
+            print(data)
+            print(len(data))
+            del self.frame_buffer[0:40]
+            #keyword = self.extract_features_keyword(data)
+            #speaker = self.extract_features_speaker(data)
+            #keyword_prd, speaker_prd = self.realtime_predict(keyword, speaker)
+            keyword = self.extract_features_keyword_augmented(data, 44100)
+            speaker = self.extract_features_speaker_augmented(data, 44100)
+            keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
+            print(keyword_prd)
+            print(speaker_prd)
+            #thread_classifier = threading.Thread(target = self.func_classifier, args= [data])
+            #thread_classifier.start()
+
+    def func_classifier(self,data):
+        keyword = self.extract_features_keyword(data)
+        speaker = self.extract_features_speaker(data)
+        keyword_prd , speaker_prd = self.realtime_predict(keyword,speaker)
+        #keyword = self.extract_features_keyword_augmented(data, 44100)
+        #speaker = self.extract_features_speaker_augmented(data, 44100)
+        #keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
+        print(keyword_prd)
+        print(speaker_prd)
 
 
     def get_audio_input_stream(self):
@@ -170,10 +175,8 @@ class Audio:
             self.frames.append(np.fromstring(data,dtype='Float16'))
         print(int(RATE / CHUNK * RECORD_SECONDS))
         print("finished recording")
-
         # Unpack data using struct
         #unpack_data = (struct.unpack('h' * chunk, data))
-
         amplitude = np.hstack(self.frames)
         self.stream.stop_stream()
         self.stream.close()
