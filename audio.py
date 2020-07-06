@@ -11,17 +11,22 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 import struct
+import copy
+from collections import deque
+import threading
 from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero
 
 FILENAME = "other_sounds/z_file.wav"
 
-FORMAT = pyaudio.paInt16
+FORMAT = pyaudio.paFloat32
 CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 RECORD_SECONDS= 2
 
 MAX_PLOT_SIZE = CHUNK * 50
+QUEUE_TIME = RATE*RECORD_SECONDS
+#QUEUE_TIME = (int(RATE/(CHUNK*RECORD_SECONDS)))
 
 # Keyword Scaler/Model
 scaler_keyword = StandardScaler()
@@ -45,6 +50,7 @@ scaler_speaker = StandardScaler()
 scaler_speaker = pickle.load(open("audio_utils/scaler_speaker_aug.bin", "rb"))
 #model_speaker = MLPClassifier()
 #model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
+
 OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
 OvR_model_speaker = pickle.load(open("audio_utils/classifier_speaker_2class_OvR_aug.model", "rb"))
 
@@ -53,25 +59,37 @@ class Audio:
     def __init__(self):
         self.audio = pyaudio.PyAudio()
         self.frames = []
+        self.frame_buffer = []
         self.counter = 0
+        self.lock = threading.Lock()
+        self.stop = False
+        self.d=deque(maxlen=QUEUE_TIME)
         pass
 
     def open(self):
-        self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+        #self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+        self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK, stream_callback=self.new_frame)
+        print(self.stream.is_active())
+
+        return self.stream
 
     def start(self):
         self.stream.start_stream()
-        while self.stream.is_active():
-            time.sleep(0.1)
 
     def record(self):
         self.frames.append(self.stream.read(CHUNK))
         return self.stream.read(CHUNK)
 
-    def close(self):
+    '''def close(self):
         self.stream.stop_stream()
         self.stream.close()
-        self.audio.terminate()
+        #self.audio.terminate()'''
+
+    def close(self):
+        with self.lock:
+            self.stop = True
+        self.stream.close()
+        #self.audio.terminate()
 
     def save(self,file):
         waveFile = wave.open(file,'wb')
@@ -81,27 +99,82 @@ class Audio:
         waveFile.writeframes(b''.join(self.frames))
         waveFile.close()
 
-    def callback(self, in_data, frame_count, time_info, flag):
+    def callbackFunc(self, in_data, frame_count, time_info, status_flags):
+        print("Callback...")
+        print(len(in_data))
+        data = np.fromstring(in_data,np.float32)
+        with self.lock:
+            self.frames.append(data)
+            if self.stop:
+                return None, pyaudio.paComplete
+        return None, pyaudio.paContinue
+
+        '''self.d.append(in_data)
+        # If 2s worth of audio is collected, copy to secondary buffer and pass to thread function
+        if len(self.d) == QUEUE_TIME:
+            frames = copy.copy(self.d)
+            thread = threading.Thread(target=self.prd_complete())
+            thread.start()
+            self.d.clear()
+            print("2s Buffer")
+        return in_data, pyaudio.paContinue
+        '''
+
+    def get_frames(self):
+        with self.lock:
+            frames = self.frames
+            self.frames = []
+        return frames
+
+    def new_frame(self, in_data, frame_count, time_info, flag):
         if flag:
             print("Playback Error: %i" % flag)
-
+        print("Callback...")
+        print(len(in_data))
+        data = np.fromstring(in_data, np.float32)
+        amplitude = np.hstack(data)
+        #print(amplitude)
+        self.frame_buffer.append(amplitude)
+        # If 2s worth of audio is collected, copy to secondary buffer and pass to thread function
+        if len(self.frame_buffer) >= 20:
+            frames = copy.copy(self.frame_buffer)
+            thread = threading.Thread(target=self.prd_complete(arg=[frames]))
+            thread.start()
+            self.frame_buffer.clear()
+            #self.d.clear()
+            print("2s Buffer")
+        #print(len(self.d))
         #played_frames = self.counter
         #self.counter += frame_count
         #return signal[played_frames:self.counter], pyaudio.paContinue
-        return (in_data, pyaudio.paContinue)
+        return in_data, pyaudio.paContinue
+
+    def prd_complete(self,arg):
+        print("*****************************************")
+        #print(arg)
+        data = np.hstack(arg)
+        print(len(data))
+        #return data
+        #self.extract_features_speaker(clip)
+        #self.extract_features_keyword(clip)
+        # keyword = mic.extract_features_keyword(sound_clip)
+        # speaker = mic.extract_features_speaker(sound_clip)
+        # keyword_prd , speaker_prd = mic.realtime_predict(keyword,speaker)
+
 
     def get_audio_input_stream(self):
-
         print("* recording")
         for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
             data = self.stream.read(CHUNK)
-            self.frames.append(data)
+            #self.frames.append(data)
+            self.frames.append(np.fromstring(data,dtype='Float16'))
         print(int(RATE / CHUNK * RECORD_SECONDS))
         print("finished recording")
 
         # Unpack data using struct
         #unpack_data = (struct.unpack('h' * chunk, data))
 
+        amplitude = np.hstack(self.frames)
         self.stream.stop_stream()
         self.stream.close()
         self.save(FILENAME)
@@ -148,7 +221,6 @@ class Audio:
     def realtime_predict(self, keyword, speaker):
         keyword_prediction = OvR_model_keyword.predict(keyword)
         speaker_prediction = OvR_model_speaker.predict(speaker)
-
 
         keyword_result = keyword_prediction[0]
         speaker_result = speaker_prediction[0]
