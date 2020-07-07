@@ -139,7 +139,7 @@ class Audio:
     def new_frame(self, in_data, frame_count, time_info, flag):
         if flag:
             print("Playback Error: %i" % flag)
-        print("Callback...")
+       # print("Callback...")
         #print(len(in_data))
         data = np.fromstring(in_data, np.float32)
        # print(len(data))
@@ -147,30 +147,23 @@ class Audio:
         return in_data, pyaudio.paContinue
 
     def prd_complete(self,arg):
-        print("*****************************************")
+        #print("*****************************************")
         self.frame_buffer.append(arg)
         #print(self.frame_buffer)
         #if self.i == 0:
         if len(self.frame_buffer) == 86:
             frames = copy.copy(self.frame_buffer)
-           #print(len(frames)) #Fazer classificação
             self.data = np.hstack(frames)
-            #data = np.concatenate(frames,axis=None)
             #print(self.data)
             #print(len(self.data))
             del self.frame_buffer[0:44]
-            ''''#keyword = self.extract_features_keyword(data)
-            #speaker = self.extract_features_speaker(data)
-            #keyword_prd, speaker_prd = self.realtime_predict(keyword, speaker)
-            keyword = self.extract_features_keyword_augmented(data, 44100)
-            speaker = self.extract_features_speaker_augmented(data, 44100)
-            keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
-            print(keyword_prd)
-            print(speaker_prd)
-            '''
             #self.thread_class.start()
-            thread_classifier = threading.Thread(target = self.func_classifier, args= [self.data])
-            thread_classifier.start()
+            #print(max(self.data))
+            if max(self.data) >= 0.1:
+                thread_classifier = threading.Thread(target = self.func_classifier, args= [self.data])
+                thread_classifier.start()
+            else:
+                print("Speaker Louder")
 
     def func_classifier(self,data):
         keyword = self.extract_features_keyword(data)
