@@ -33,6 +33,7 @@ class Video:
 	def open(self,url):
 		self.url=url
 		self.cam = cv2.VideoCapture(url)
+		self.imagAtual=None
 		#self.cam.open(self.url)
 
 	# Closes the connection to the camera
@@ -124,6 +125,7 @@ class Video:
 				cv2.putText(image, str(probability.max()), (x, y - 10), 0, 1, (0, 255, 0))
 			else:
 				cv2.putText(image, "Desconhecido", (x, y - 10), 0, 1, (0, 0, 255))
+		self.imagAtual=image
 		return image
 
 	def classifyMultiple(self,image):
@@ -233,3 +235,7 @@ class Video:
 
 			distances = distances.reshape(-1, 1)
 		return distances
+
+	def screenshot(self):
+		if type(self.imagAtual)!=type(None):
+			cv2.imwrite("screenshot.png",self.imagAtual)
