@@ -10,6 +10,29 @@ import pyqtgraph as pg
 from pyqtgraph import PlotWidget, plot
 import matplotlib.pyplot as plt
 import threading
+import time
+
+
+class myThreadVideo (threading.Thread):
+   def __init__(self, threadID):
+       threading.Thread.__init__(self)
+       self.threadID = threadID
+       self.stopped=False
+
+   def stop(self):
+       self.stopped = True
+
+   def run(self):
+       while True:
+           if self.stopped:
+               self.stopped=False
+               cam.close()
+               return
+           grabFrame()
+           time.sleep(0.01)
+
+
+
 
 #TODO threading for performance improvement
 #TODO Remove mic close error
@@ -28,8 +51,10 @@ def img2pixmap(image):
 # Cyclic capture image
 def grabFrame():
     cap=cam.capture()
-    image=cam.classify(cap)
+    image = cam.classify(cap)
     window.label_videoCam.setPixmap(img2pixmap(image))
+
+
 
 # Cyclic capture sound
 def recording():
@@ -50,12 +75,14 @@ def recording():
 # Starts image capture
 def on_cameraON_clicked():
     cam.open(0);
-    qtimerFrame.start(50)
+    global thread1
+    thread1= myThreadVideo(1)
+    thread1.start()
+
 
 # Stops image capture
 def on_cameraOFF_clicked():
-    qtimerFrame.stop()
-    cam.close()
+    thread1.stop()
 
 # Starts sound capture
 def on_micOn_clicked():
@@ -109,8 +136,9 @@ audio_waveform = audio_plot.plot(pen=(24, 215, 248), name = "Waveform")
 total_data = []
 
 # Image capture timer
-qtimerFrame = QTimer()
-qtimerFrame.timeout.connect(grabFrame)
+#qtimerFrame = QTimer()
+#qtimerFrame.timeout.connect(grabFrame)
+#threading.Thread.start(grabFrame())
 
 # Micro timer
 qtimerRecord = QTimer()
