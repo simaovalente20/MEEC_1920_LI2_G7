@@ -30,11 +30,19 @@ QUEUE_TIME = RATE*RECORD_SECONDS
 
 # Keyword Scaler/Model
 scaler_keyword = StandardScaler()
-scaler_keyword = pickle.load(open("audio_utils/scaler_keyword_aug.bin", "rb"))
+scaler_keyword = pickle.load(open("utils_audio/scaler_keyword_aug.bin", "rb"))
 #model_keyword = MLPClassifier()
 #model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
 OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
-OvR_model_keyword = pickle.load(open("audio_utils/classifier_keyword_2class_OvR_aug.model", "rb"))
+OvR_model_keyword = pickle.load(open("utils_audio/classifier_keyword_OvR_aug.model", "rb"))
+
+# Speaker Scaler/Model
+scaler_speaker = StandardScaler()
+scaler_speaker = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
+#model_speaker = MLPClassifier()
+#model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
+OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
+OvR_model_speaker = pickle.load(open("utils_audio/classifier_speaker_OvR_aug.model", "rb"))
 
 OvR_model_keyword_augmented = OneVsRestClassifier(MLPClassifier())
 OvR_model_keyword_augmented = pickle.load(open("utils_audio/classifier_keyword_aug.model", "rb"))
@@ -45,24 +53,31 @@ OvR_model_speaker_augmented = pickle.load(open("utils_audio/classifier_speaker_O
 scaler_speaker_augmented = StandardScaler()
 scaler_speaker_augmented = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
 
-# Speaker Scaler/Model
-scaler_speaker = StandardScaler()
-scaler_speaker = pickle.load(open("audio_utils/scaler_speaker_aug.bin", "rb"))
-#model_speaker = MLPClassifier()
-#model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
+class audioThread(threading.Thread):
+    def __init__(self,ThreadId):
+        threading.Thread.__init__(self)
+        self.ThreadId = ThreadId
+        self.stopped = False
 
-OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker = pickle.load(open("audio_utils/classifier_speaker_2class_OvR_aug.model", "rb"))
+    def stop(self):
+        self.stopped=True
 
+    def run(self):
+        while True:
+            if self.stopped:
+                self.stopped=False
+            return
+        Audio.func_classifier()
+        time.sleep(0.1)
 
 class Audio:
     def __init__(self):
         self.audio = pyaudio.PyAudio()
         self.frames = []
         self.frame_buffer = []
+        self.data =[]
         self.counter = 0
         self.lock = threading.Lock()
-      #self.thread_class = threading.Thread(target=self.prd_complete(arg=[frames]))
         self.stop = False
         self.d=deque(maxlen=QUEUE_TIME)
         self.i = 0
@@ -72,7 +87,6 @@ class Audio:
         #self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
         self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK, stream_callback=self.new_frame)
         print(self.stream.is_active())
-
         return self.stream
 
     def start(self):
@@ -126,8 +140,9 @@ class Audio:
         if flag:
             print("Playback Error: %i" % flag)
         print("Callback...")
-        print(len(in_data))
+        #print(len(in_data))
         data = np.fromstring(in_data, np.float32)
+       # print(len(data))
         self.prd_complete(data)
         return in_data, pyaudio.paContinue
 
@@ -135,17 +150,16 @@ class Audio:
         print("*****************************************")
         self.frame_buffer.append(arg)
         #print(self.frame_buffer)
-
         #if self.i == 0:
-        if len(self.frame_buffer) == 80:
+        if len(self.frame_buffer) == 86:
             frames = copy.copy(self.frame_buffer)
-            print(len(frames)) #Fazer classificação
-            data = np.hstack(frames)
+           #print(len(frames)) #Fazer classificação
+            self.data = np.hstack(frames)
             #data = np.concatenate(frames,axis=None)
-            print(data)
-            print(len(data))
-            del self.frame_buffer[0:40]
-            #keyword = self.extract_features_keyword(data)
+            #print(self.data)
+            #print(len(self.data))
+            del self.frame_buffer[0:44]
+            ''''#keyword = self.extract_features_keyword(data)
             #speaker = self.extract_features_speaker(data)
             #keyword_prd, speaker_prd = self.realtime_predict(keyword, speaker)
             keyword = self.extract_features_keyword_augmented(data, 44100)
@@ -153,8 +167,10 @@ class Audio:
             keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
             print(keyword_prd)
             print(speaker_prd)
-            #thread_classifier = threading.Thread(target = self.func_classifier, args= [data])
-            #thread_classifier.start()
+            '''
+            #self.thread_class.start()
+            thread_classifier = threading.Thread(target = self.func_classifier, args= [self.data])
+            thread_classifier.start()
 
     def func_classifier(self,data):
         keyword = self.extract_features_keyword(data)
@@ -176,17 +192,14 @@ class Audio:
         print(int(RATE / CHUNK * RECORD_SECONDS))
         print("finished recording")
         # Unpack data using struct
-        #unpack_data = (struct.unpack('h' * chunk, data))
         amplitude = np.hstack(self.frames)
         self.stream.stop_stream()
         self.stream.close()
         self.save(FILENAME)
-
         '''print("* recording")
         frames_mono = sounddevice.rec(int(RATE * FEED_DURATION), samplerate=RATE, channels=1,dtype='float32')
         sounddevice.wait()
         print("finished recording")'''
-
         return self.frames
 
     def extract_features_keyword(self, X):
@@ -223,13 +236,18 @@ class Audio:
 
     def realtime_predict(self, keyword, speaker):
         keyword_prediction = OvR_model_keyword.predict(keyword)
+        keyword_probability = OvR_model_keyword.predict_proba(keyword)
         speaker_prediction = OvR_model_speaker.predict(speaker)
+        speaker_probability = OvR_model_speaker.predict_proba(speaker)
 
+        print(keyword_probability)
+        print(speaker_probability)
         keyword_result = keyword_prediction[0]
         speaker_result = speaker_prediction[0]
 
         #keyword_result = keyword_list[str(keyword_prediction)]
         #speaker_result = speaker_list[str(speaker_prediction)]
+
 
         return keyword_result, speaker_result
 

@@ -40,10 +40,11 @@ def recording():
     '''PyQtGraph plot'''
     # data_sample = np.fromstring(raw_data, dtype=np.int16) #convert raw bytes to interger
     #total_data = np.concatenate([total_data, data_sample])
-    amplitude = np.hstack(raw_data)
-    if len(amplitude) > audio.MAX_PLOT_SIZE:
-        amplitude = amplitude[audio.CHUNK:]
-    audio_waveform.setData(amplitude)
+    if len(raw_data) > 0:
+        amplitude = np.hstack(raw_data)
+        if len(amplitude) > audio.MAX_PLOT_SIZE:
+            amplitude = amplitude[audio.CHUNK:]
+        audio_waveform.setData(amplitude)
 
 # Starts image capture
 def on_cameraON_clicked():

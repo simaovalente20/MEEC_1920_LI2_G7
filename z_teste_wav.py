@@ -48,6 +48,7 @@ def extract_feature(file_name, **kwargs):
             result = np.hstack((result, mel))
     return result
 
+
 def extract_feature_speaker(file_name, **kwargs):
     mfcc = kwargs.get("mfcc")
     chroma = kwargs.get("chroma")
