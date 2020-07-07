@@ -29,7 +29,7 @@ class myThreadVideo (threading.Thread):
                cam.close()
                return
            grabFrame()
-           time.sleep(0.01)
+           time.sleep(0.1)
 
 
 
@@ -73,6 +73,9 @@ def recording():
 
 # Starts image capture
 def on_cameraON_clicked():
+    window.btn_cameraOn.setEnabled(False)
+    window.btn_cameraOff.setEnabled(True)
+    window.btn_screenshot.setEnabled(True)
     cam.open(0);
     global thread1
     thread1= myThreadVideo(1)
@@ -81,10 +84,15 @@ def on_cameraON_clicked():
 
 # Stops image capture
 def on_cameraOFF_clicked():
+    window.btn_cameraOff.setEnabled(False)
+    window.btn_cameraOn.setEnabled(True)
+    window.btn_screenshot.setEnabled(False)
     thread1.stop()
 
 # Starts sound capture
 def on_micOn_clicked():
+    window.btn_micOn.setEnabled(False)
+    window.btn_micOff.setEnabled(True)
     mic.open()
     qtimerRecord.start()
     '''clip = mic.get_audio_input_stream()
@@ -103,9 +111,19 @@ def on_micOn_clicked():
 
 # Stops sound capture
 def on_micOff_clicked():
+    window.btn_micOn.setEnabled(True)
+    window.btn_micOff.setEnabled(False)
     qtimerRecord.stop()
     mic.close()
     mic.save("file.wav")
+
+def on_screenshot():
+    cam.screenshot()
+
+def closeEvent():
+    #on_cameraOFF_clicked()
+    print("close")
+
 
 # Creation of the camera
 cam = video.Video()
@@ -117,10 +135,17 @@ window = uic.loadUi("prototype.ui")
 
 #Signals
 window.btn_cameraOn.clicked.connect(on_cameraON_clicked)
+window.btn_cameraOn.setEnabled(True)
 window.btn_cameraOff.clicked.connect(on_cameraOFF_clicked)
+window.btn_cameraOff.setEnabled(False)
 window.btn_micOn.clicked.connect(on_micOn_clicked)
+window.btn_micOn.setEnabled(True)
 window.btn_micOff.clicked.connect(on_micOff_clicked)
+window.btn_micOff.setEnabled(False)
 window.label_videoCam.setScaledContents(True)
+window.btn_screenshot.clicked.connect(on_screenshot)
+window.btn_screenshot.setEnabled(False)
+#window.closeEvent.connect(closeEvent)
 
 # Audio plot time domain waveform
 audio_plot = window.plotWidget
