@@ -17,7 +17,7 @@ le = LabelEncoder()
 def load_data(test_size = 0.2):
     x, y = [], []
     empty_files = []
-    for base_path in glob.glob("Dataset\speaker\G*"):
+    for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
         print(base_path.split("\\")[2])
         for file in glob.glob(base_path + "\*.wav"):
             basename = os.path.basename(file)   # get the base name of the audio file

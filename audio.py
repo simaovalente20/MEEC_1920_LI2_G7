@@ -81,6 +81,7 @@ class Audio:
         self.stop = False
         self.d=deque(maxlen=QUEUE_TIME)
         self.i = 0
+        self.counter=0
         pass
 
     def open(self):
@@ -147,10 +148,20 @@ class Audio:
         return in_data, pyaudio.paContinue
 
     def prd_complete(self,arg):
-        #print("*****************************************")
         self.frame_buffer.append(arg)
-        #print(self.frame_buffer)
-        #if self.i == 0:
+        if(len(self.frame_buffer)==86):
+            self.frame_buffer.pop(0)
+        self.counter=self.counter+1
+        if self.counter==43:
+            self.counter=0
+            frames = copy.copy(self.frame_buffer)
+            self.data = np.hstack(frames)
+            if max(self.data) >= 0.1:
+                thread_classifier = threading.Thread(target=self.func_classifier, args=[self.data])
+                thread_classifier.start()
+            else:
+                print("Speaker Louder")
+        '''
         if len(self.frame_buffer) == 86:
             frames = copy.copy(self.frame_buffer)
             self.data = np.hstack(frames)
@@ -164,11 +175,12 @@ class Audio:
                 thread_classifier.start()
             else:
                 print("Speaker Louder")
+        '''
 
     def func_classifier(self,data):
-        keyword = self.extract_features_keyword(data)
-        speaker = self.extract_features_speaker(data)
-        keyword_prd , speaker_prd = self.realtime_predict(keyword,speaker)
+        keyword = self.extract_features_keyword_augmented(data)
+        speaker = self.extract_features_speaker_augmented(data)
+        keyword_prd , speaker_prd = self.realtime_predict_augmented(keyword,speaker)
         #keyword = self.extract_features_keyword_augmented(data, 44100)
         #speaker = self.extract_features_speaker_augmented(data, 44100)
         #keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
@@ -244,34 +256,18 @@ class Audio:
 
         return keyword_result, speaker_result
 
-    def extract_features_keyword_augmented(self, X, sr):
+    def extract_features_keyword_augmented(self, X):
         speaker_normalized=[]
 
-        features = extract_feature(X, sr, mfcc=True, chroma=True, mel=True)
-        speaker_normalized.append(features)
-
-        frame_shift = aug_shift_zero(X, sr, 0.2, shift_direction='both')
-        features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
-        speaker_normalized.append(features)
-
-        frame_slower = aug_speed(X, 0.9)
-        features = extract_feature(frame_slower, sr, mfcc=True, chroma=True, mel=True)
-        speaker_normalized.append(features)
-
-        frame_faster = aug_speed(X, 1.1)
-        features = extract_feature(frame_faster, sr, mfcc=True, chroma=True, mel=True)
+        features = extract_feature(X, RATE, mfcc=True, chroma=True, mel=True)
         speaker_normalized.append(features)
 
         return speaker_normalized
 
-    def extract_features_speaker_augmented(self, X, sr):
+    def extract_features_speaker_augmented(self, X):
         speaker_normalized = []
 
-        features = extract_feature(X, sr, mfcc=True, chroma=True, mel=True)
-        speaker_normalized.append(features)
-
-        frame_shift = aug_shift_zero(X, sr, 0.2, shift_direction='both')
-        features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+        features = extract_feature(X, RATE, mfcc=True, chroma=True, mel=True)
         speaker_normalized.append(features)
 
         return speaker_normalized
