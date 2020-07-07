@@ -54,8 +54,6 @@ def grabFrame():
     image = cam.classify(cap)
     window.label_videoCam.setPixmap(img2pixmap(image))
 
-
-
 # Cyclic capture sound
 def recording():
     global mic, total_data, max_hold
@@ -80,7 +78,6 @@ def on_cameraON_clicked():
     global thread1
     thread1= myThreadVideo(1)
     thread1.start()
-
 
 # Stops image capture
 def on_cameraOFF_clicked():

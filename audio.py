@@ -198,13 +198,13 @@ class Audio:
     def extract_features_keyword(self, X):
         keyword_temp = []
         # X = np.fromstring(in_data,dtype=np.float32)
-        stft = np.abs(librosa.stft(X))
+        stft = np.abs(librosa.stft(X, n_fft=1024))
         result = np.array([])
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=RATE, n_mfcc=40).T, axis=0)
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=44100, n_mfcc=40, n_fft=1024).T, axis=0) #temporal averaging
         result = np.hstack((result, mfccs))
-        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=RATE).T, axis=0)
+        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=44100).T,axis=0)#temporal averaging
         result = np.hstack((result, chroma))
-        mel = np.mean(librosa.feature.melspectrogram(X, sr=RATE).T, axis=0)
+        mel = np.mean(librosa.feature.melspectrogram(X,n_fft=1024, sr=44100).T,axis=0)#temporal averaging
         result = np.hstack((result, mel))
         keyword_normalized = scaler_keyword.transform(result.reshape(1,-1))
         #keyword_temp.append(result)
@@ -214,13 +214,13 @@ class Audio:
     def extract_features_speaker(self, X):
         # X = np.fromstring(in_data, dtype=np.float32)
         speaker_temp = []
-        stft = np.abs(librosa.stft(X))
+        stft = np.abs(librosa.stft(X, n_fft=1024))
         result = np.array([])
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=RATE, n_mfcc=40).T, axis=0)
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=44100, n_mfcc=40, n_fft=1024).T, axis=0)  # temporal averaging
         result = np.hstack((result, mfccs))
-        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=RATE).T, axis=0)
+        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=44100).T, axis=0)  # temporal averaging
         result = np.hstack((result, chroma))
-        mel = np.mean(librosa.feature.melspectrogram(X, sr=RATE).T, axis=0)
+        mel = np.mean(librosa.feature.melspectrogram(X, n_fft=1024, sr=44100).T, axis=0)  # temporal averaging
         result = np.hstack((result, mel))
         speaker_normalized = scaler_speaker.transform(result.reshape(1, -1))
         #speaker_temp.append(result)
@@ -235,9 +235,9 @@ class Audio:
 
         print(keyword_probability)
         print(speaker_probability)
+
         keyword_result = keyword_prediction[0]
         speaker_result = speaker_prediction[0]
-
         #keyword_result = keyword_list[str(keyword_prediction)]
         #speaker_result = speaker_list[str(speaker_prediction)]
 
