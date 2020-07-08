@@ -24,12 +24,14 @@ class myThreadVideo (threading.Thread):
 
    def run(self):
        while True:
+           print("video 1")
            if self.stopped:
                self.stopped=False
                cam.close()
                return
            grabFrame()
            time.sleep(0.1)
+           print("video 2")
 
 
 
@@ -68,6 +70,9 @@ def recording():
         if len(amplitude) > audio.MAX_PLOT_SIZE:
             amplitude = amplitude[audio.CHUNK:]
         audio_waveform.setData(amplitude)
+    lastSpeaker,last_keyword=mic.get_results()
+    window.lineEdit_lastSpeakerId.setText(lastSpeaker)
+    window.lineEdit_lastKeyword.setText(last_keyword)
 
 # Starts image capture
 def on_cameraON_clicked():
@@ -78,6 +83,7 @@ def on_cameraON_clicked():
     global thread1
     thread1= myThreadVideo(1)
     thread1.start()
+    #thread1.join()
 
 # Stops image capture
 def on_cameraOFF_clicked():
@@ -153,6 +159,9 @@ pg.PlotWidget.setBackground(audio_plot,'w')
 audio_waveform = audio_plot.plot(pen=(24, 215, 248), name = "Waveform")
 #pg.PlotWidget.setAntialiasing(window.plotWidget,aa=1)
 total_data = []
+
+#last_speaker= window.lineEdit_lastSpeakerId
+#last_keyword= window.lineEdit_lastKeyword
 
 # Image capture timer
 #qtimerFrame = QTimer()

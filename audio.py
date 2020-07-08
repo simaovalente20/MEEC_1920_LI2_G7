@@ -82,7 +82,12 @@ class Audio:
         self.d=deque(maxlen=QUEUE_TIME)
         self.i = 0
         self.counter=0
+        self.keyword_prd=""
+        self.speaker_prd=""
         pass
+
+    def get_results(self):
+        return self.speaker_prd, self.keyword_prd
 
     def open(self):
         #self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
@@ -159,6 +164,7 @@ class Audio:
             if max(self.data) >= 0.1:
                 thread_classifier = threading.Thread(target=self.func_classifier, args=[self.data])
                 thread_classifier.start()
+                thread_classifier.join()
             else:
                 print("Speaker Louder")
         '''
@@ -184,8 +190,10 @@ class Audio:
         #keyword = self.extract_features_keyword_augmented(data, 44100)
         #speaker = self.extract_features_speaker_augmented(data, 44100)
         #keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
-        print(keyword_prd)
-        print(speaker_prd)
+        self.keyword_prd=keyword_prd
+        self.speaker_prd=speaker_prd
+        #print(keyword_prd)
+        #print(speaker_prd)
 
 
     def get_audio_input_stream(self):
