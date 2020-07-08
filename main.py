@@ -61,7 +61,7 @@ def recording():
     global mic, total_data, max_hold
     #raw_data = mic.record()
     #raw_data = mic.get_audio_input_stream()
-    raw_data = mic.get_frames()
+    raw_data,lastSpeaker,last_keyword = mic.get_frames()
     '''PyQtGraph plot'''
     # data_sample = np.fromstring(raw_data, dtype=np.int16) #convert raw bytes to interger
     #total_data = np.concatenate([total_data, data_sample])
@@ -69,10 +69,12 @@ def recording():
         amplitude = np.hstack(raw_data)
         if len(amplitude) > audio.MAX_PLOT_SIZE:
             amplitude = amplitude[audio.CHUNK:]
+            window.lineEdit_lastSpeakerId.setText(lastSpeaker)
+            window.lineEdit_lastKeyword.setText(last_keyword)
         audio_waveform.setData(amplitude)
-    lastSpeaker,last_keyword=mic.get_results()
-    window.lineEdit_lastSpeakerId.setText(lastSpeaker)
-    window.lineEdit_lastKeyword.setText(last_keyword)
+    #lastSpeaker,last_keyword=mic.get_results()
+    #window.lineEdit_lastSpeakerId.setText(lastSpeaker)
+    #window.lineEdit_lastKeyword.setText(last_keyword)
 
 # Starts image capture
 def on_cameraON_clicked():
