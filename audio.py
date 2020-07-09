@@ -53,6 +53,7 @@ OvR_model_speaker_augmented = pickle.load(open("utils_audio/classifier_speaker_O
 scaler_speaker_augmented = StandardScaler()
 scaler_speaker_augmented = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
 
+'''
 class audioThread(threading.Thread):
     def __init__(self,ThreadId):
         threading.Thread.__init__(self)
@@ -67,8 +68,10 @@ class audioThread(threading.Thread):
             if self.stopped:
                 self.stopped=False
             return
+        print("asddasdasdasdasdadasd")
         Audio.func_classifier()
         time.sleep(0.1)
+'''
 
 class Audio:
     def __init__(self):
@@ -86,8 +89,8 @@ class Audio:
         self.speaker_prd=""
         pass
 
-    def get_results(self):
-        return self.speaker_prd, self.keyword_prd
+    #def get_results(self):
+        #return self.speaker_prd, self.keyword_prd
 
     def open(self):
         #self.stream = self.audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
@@ -137,10 +140,12 @@ class Audio:
         '''
 
     def get_frames(self):
+        '''
         with self.lock:
             frames = self.frames
             self.frames = []
-        return self.frame_buffer
+        '''
+        return self.frame_buffer,self.speaker_prd, self.keyword_prd
 
     def new_frame(self, in_data, frame_count, time_info, flag):
         if flag:
@@ -159,8 +164,8 @@ class Audio:
         self.counter=self.counter+1
         if self.counter==43:
             self.counter=0
-            frames = copy.copy(self.frame_buffer)
-            self.data = np.hstack(frames)
+            #frames = copy.copy(self.frame_buffer)
+            self.data = np.hstack(self.frame_buffer)
             if max(self.data) >= 0.1:
                 thread_classifier = threading.Thread(target=self.func_classifier, args=[self.data])
                 thread_classifier.start()
@@ -186,12 +191,12 @@ class Audio:
     def func_classifier(self,data):
         keyword = self.extract_features_keyword_augmented(data)
         speaker = self.extract_features_speaker_augmented(data)
-        keyword_prd , speaker_prd = self.realtime_predict_augmented(keyword,speaker)
+        self.keyword_prd , self.speaker_prd = self.realtime_predict_augmented(keyword,speaker)
         #keyword = self.extract_features_keyword_augmented(data, 44100)
         #speaker = self.extract_features_speaker_augmented(data, 44100)
         #keyword_prd, speaker_prd = self.realtime_predict_augmented(keyword, speaker)
-        self.keyword_prd=keyword_prd
-        self.speaker_prd=speaker_prd
+        #self.keyword_prd=keyword_prd
+        #self.speaker_prd=speaker_prd
         #print(keyword_prd)
         #print(speaker_prd)
 
