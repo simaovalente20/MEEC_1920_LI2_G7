@@ -14,7 +14,7 @@ import struct
 import copy
 from collections import deque
 import threading
-from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero,extract_featurep
 
 FILENAME = "other_sounds/z_file.wav"
 
@@ -38,7 +38,7 @@ OvR_model_keyword = pickle.load(open("utils_audio/classifier_keyword_OvR_aug.mod
 
 # Speaker Scaler/Model
 scaler_speaker = StandardScaler()
-scaler_speaker = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
+scaler_speaker = pickle.load(open("utils_audio2/scaler_speaker_aug.bin", "rb"))
 #model_speaker = MLPClassifier()
 #model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
 OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
@@ -49,9 +49,9 @@ OvR_model_keyword_augmented = pickle.load(open("utils_audio/classifier_keyword_a
 scaler_keyword_augmented = StandardScaler()
 scaler_keyword_augmented = pickle.load(open("utils_audio/scaler_keyword_aug.bin", "rb"))
 OvR_model_speaker_augmented = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker_augmented = pickle.load(open("utils_audio/classifier_speaker_OvR_aug.model", "rb"))
+OvR_model_speaker_augmented = pickle.load(open("utils_audio2/classifier_speaker_clf_aug.model", "rb"))
 scaler_speaker_augmented = StandardScaler()
-scaler_speaker_augmented = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
+scaler_speaker_augmented = pickle.load(open("utils_audio2/scaler_speaker_aug.bin", "rb"))
 
 '''
 class audioThread(threading.Thread):
@@ -280,7 +280,7 @@ class Audio:
     def extract_features_speaker_augmented(self, X):
         speaker_normalized = []
 
-        features = extract_feature(X, RATE, mfcc=True, chroma=True, mel=True)
+        features = extract_featurep(X, RATE, pitch=True)
         speaker_normalized.append(features)
 
         return speaker_normalized
