@@ -31,21 +31,30 @@ def extract_feature(X, sample_rate, **kwargs):
         result = np.hstack((result, mel))
     return result
 
-def extract_feature_speaker(X, sample_rate, **kwargs):
+def extract_featurep(X, sample_rate, **kwargs):
+    pitch = kwargs.get("pitch")
+    stft = np.abs(librosa.stft(X, n_fft=1024,hop_length=256))
+    result = np.array([])
+    if pitch:
+        pitches, magnitudes = librosa.piptrack(X,sample_rate,S=stft,n_fft=1024,hop_length=256,fmin=50.0,fmax=22050.0)
+        p = np.mean((pitches),axis = 1)
+        result = np.hstack((result, p))
+        m = np.mean((magnitudes), axis=1)
+        result = np.hstack((result, m))
+    return result
+
+def extract_feature2(X, sample_rate, **kwargs):
     mfcc = kwargs.get("mfcc")
-    chroma = kwargs.get("chroma")
+    centroid = kwargs.get("centroid")
     mel = kwargs.get("mel")
     stft = np.abs(librosa.stft(X, n_fft=1024))
     result = np.array([])
     if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=120, n_fft=1024).T, axis=0) #temporal averaging
-        result = np.hstack((result, mfccs))
-    if chroma:                                                            # compute chroma
-        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
-        result = np.hstack((result, chroma))
-    if mel:                                                                 # Mel-scaled spectrogram
-        mel = np.mean(librosa.feature.melspectrogram(X,n_fft=1024, sr=sample_rate).T,axis=0)#temporal averaging
-        result = np.hstack((result, mel))
+        mfccs = np.array(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024)) #temporal averaging
+        result = mfccs.flatten()
+        #librosa.util.fix_length(result, )
+    if centroid:
+        cent = librosa.feature.spectral_centroid(y=X, sr=sample_rate,n_fft=1024,hop_length=256)
     return result
 
 def load_sound_file(file_name):
