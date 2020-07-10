@@ -1,0 +1,1 @@
+classifier_keyword_clf_aug == classifier OvR ; features = (24)mfccs of 2seconds

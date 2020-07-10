@@ -1,13 +1,17 @@
 import librosa.display
-import librosa.display
+
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile
+import sounddevice as sd
+import os, glob, pickle
 
 '''Example'''
 #TODO: https://www.thepythoncode.com/article/building-a-speech-emotion-recognizer-using-sklearn
 word_command = {"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
 
+
+''' Feature Extraction Utils'''
 def read_sounfile(filename):
     with soundfile.SoundFile(filename) as sound_file:
         X = sound_file.read(dtype="float32")
@@ -31,36 +35,61 @@ def extract_feature(X, sample_rate, **kwargs):
         result = np.hstack((result, mel))
     return result
 
-def extract_featurep(X, sample_rate, **kwargs):
-    pitch = kwargs.get("pitch")
-    stft = np.abs(librosa.stft(X, n_fft=1024,hop_length=256))
+def extract_feature2(X, sample_rate, **kwargs):
+    mfcc = kwargs.get("mfcc")
+    centroid = kwargs.get("cent")
+    rms = kwargs.get("rms")
+    mel = kwargs.get("melspec")
+    salience = kwargs.get("selience")
+    stft = librosa.stft(X, n_fft=1024,hop_length=512)
+    mag = np.abs(stft)
+    freqs = librosa.core.fft_frequencies(sample_rate)
     result = np.array([])
+    if mfcc:    #Mel-frequency cepstral coefficients (MFCCs)
+        mfccs = np.array(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=16, n_fft=1024,hop_length=512)).reshape((-1)) #temporal averaging
+        #result = mfccs.flatten()
+        result = np.hstack((result, mfccs))
+    if centroid:
+        cent = np.array(librosa.feature.rms(librosa.magphase(stft,window=np.ones,center = False))).reshape(-1)
+        result = np.hstack((result, cent))
+    if rms:
+        rmss = np.array(librosa.feature.spectral_centroid(y=X, sr=sample_rate,n_fft=1024,hop_length=512)).reshape(-1)
+        result = np.hstack((result, rmss))
+    if mel:
+        mels = np.array(librosa.feature.melspectrogram(X, sr=sample_rate, n_fft=1024,hop_length=512))
+        result = mels.flatten()
+    return result
+
+def extract_feature3(X, sample_rate, **kwargs):
+    mfcc = kwargs.get("mfcc")
+    chroma = kwargs.get("chroma")
+    pitch = kwargs.get("pitch")
+    stft = np.abs(librosa.stft(X, n_fft=1024, hop_length=256))
+    freqs = librosa.core.fft_frequencies(sample_rate)
+    trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
+    print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
+    result = np.array([])
+    if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=16, n_fft=1024).T, axis=0) #temporal averaging
+        result = np.hstack((result, mfccs))
+    if chroma:                                                            # compute chroma
+        chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
+        result = np.hstack((result, chroma))
     if pitch:
-        pitches, magnitudes = librosa.piptrack(X,sample_rate,S=stft,n_fft=1024,hop_length=256,fmin=50.0,fmax=22050.0)
+        trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=512)
+        pitches, magnitudes = librosa.piptrack(trimmed,sample_rate,S=stft,n_fft=1024,hop_length=256,fmin=50.0,fmax=22050.0)
         p = np.mean((pitches),axis = 1)
         result = np.hstack((result, p))
         m = np.mean((magnitudes), axis=1)
         result = np.hstack((result, m))
     return result
 
-def extract_feature2(X, sample_rate, **kwargs):
-    mfcc = kwargs.get("mfcc")
-    centroid = kwargs.get("centroid")
-    mel = kwargs.get("mel")
-    stft = np.abs(librosa.stft(X, n_fft=1024))
-    result = np.array([])
-    if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
-        mfccs = np.array(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024)) #temporal averaging
-        result = mfccs.flatten()
-        #librosa.util.fix_length(result, )
-    if centroid:
-        cent = librosa.feature.spectral_centroid(y=X, sr=sample_rate,n_fft=1024,hop_length=256)
-    return result
-
 def load_sound_file(file_name):
     data, sample_rate = soundfile.read(file_name,dtype='float32')
     return data, sample_rate
 
+
+''' Data augmentation Utils'''
 def plot_time_series(data,sr):
     plt.figure(figsize=(12, 4))
     librosa.display.waveplot(data, sr)
@@ -69,8 +98,12 @@ def plot_time_series(data,sr):
 def aug_add_noise(data):
     # Adding white noise
     wn = np.random.randn(len(data))
-    data_noise = data + 0.001 * wn
+    data_noise = data + 0.0002 * wn
     return data_noise
+
+def aug_noise(data):
+    tmp = data + 0.001*np.random.normal(0,1,len(data))
+    return tmp
 
 def aug_pitch(data, sr, pitch_factor):
     return librosa.effects.pitch_shift(data,sr,pitch_factor)
@@ -78,9 +111,6 @@ def aug_pitch(data, sr, pitch_factor):
 def aug_speed(data, speed_factor):
     tmp = librosa.effects.time_stretch(data,speed_factor)
     return tmp
-
-def time_shift_left(data):
-    wav_roll = np.roll(data,)
 
 def aug_shift_zero(data, sr, shift_max, shift_direction):
     shift = np.random.randint(sr * shift_max)
@@ -98,28 +128,70 @@ def aug_shift_zero(data, sr, shift_max, shift_direction):
         augmented_data[shift:] = 0
     return augmented_data
 
-'''
-data, fs = load_sound_file("Dataset/keyword_class/baixo/G7_Baixo_3.wav")
-plot_time_series(data,fs)
-sd.play(data,fs)
+def aug_shift(data,sr,i):
+    return  np.roll(data, int((sr*2) *(i/8)))
 
-data_noise = aug_add_noise(data)
-plot_time_series(data_noise,fs)
-sd.play(data_noise,fs)
 
-data_pitch = aug_pitch(data,fs,1.2)
-plot_time_series(data_pitch,fs)
-sd.play(data_pitch,fs)
+'''tempo  =0
+empty_files = []
+for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
+    print(base_path.split("\\")[2])
+    for file in glob.glob(base_path + "\*.wav"):
+        basename = os.path.basename(file)   # get the base name of the audio file
+        print("Grupo " + base_path)
+        keyword = basename.split("_")[1]
+        print(keyword)
+        #print(base_path.split("\\")[3] + "-" + keyword)
+        # remove empty files (G1)
+        sound_file = soundfile.SoundFile(file)
+        if len(sound_file.read(dtype='float32')) == 0:
+            print("Empty File : " + file)
+            empty_files.append(file)
+            continue
+        # Raw wave
+        sound_frame, sr = read_sounfile(file)
+        #plot_time_series(sound_frame, sr)
+        #sd.play(sound_frame, sr)
+        print(len(sound_frame))
+        if (len(sound_frame)) > tempo:
+            tempo = len(sound_frame)
+            t = basename
 
-data_faster = aug_speed(data,1.1)
-plot_time_series(data_faster,fs)
-sd.play(data_faster,fs)
+        #sound_frame = librosa.util.pad_center(sound_frame,sr*2)
+        sound_frame = librosa.util.fix_length(sound_frame, sr*2)
+        plot_time_series(sound_frame, sr)
+        sd.play(sound_frame, sr)
 
-data_slower = aug_speed(data,0.9)
-plot_time_series(data_slower,fs)
-sd.play(data_slower,fs)
+        # data_noise = aug_add_noise(sound_frame)
+        # plot_time_series(data_noise, sr)
+        # sd.play(data_noise, sr)
 
-stop = 1
-'''
+        # data_faster = aug_speed(sound_frame, 1.1)
+        # plot_time_series(data_faster, sr)
+        # sd.play(data_faster, sr)
+        #
+        # data_slower = aug_speed(sound_frame, 0.9)
+        # plot_time_series(data_slower, sr)
+        # sd.play(data_slower, sr)
+
+        # Time Shift with padding
+        frame_shift = aug_shift(sound_frame, sr,1)
+        plot_time_series(frame_shift, sr)
+        sd.play(frame_shift, sr)
+
+        frame_shift = aug_shift(sound_frame, sr,2)
+        plot_time_series(frame_shift, sr)
+        sd.play(frame_shift, sr)
+
+        frame_shift = aug_shift(sound_frame, sr,3)
+        plot_time_series(frame_shift, sr)
+        sd.play(frame_shift, sr)
+        stop = 1
+        
+print(tempo)
+print(t)
+stop = 1'''
+
+
 
 

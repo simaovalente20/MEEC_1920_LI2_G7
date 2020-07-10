@@ -35,12 +35,12 @@ def extract_feature(file_name, **kwargs):
     with soundfile.SoundFile(file_name) as sound_file:
         X = sound_file.read(dtype="float32")
         sample_rate = sound_file.samplerate
-        stft = np.abs(librosa.stft(X))
+        stft = np.abs(librosa.stft(X, n_fft=1024))
         result = np.array([])
         if mfcc:  # Mel-frequency cepstral coefficients (MFCCs)
             mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40,n_fft=1024).T, axis=0)  # temporal averaging
             result = np.hstack((result, mfccs))
-        if chroma:  # compute chroma energy
+        if chroma:  # compute chroma
             chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T, axis=0)  # temporal averaging
             result = np.hstack((result, chroma))
         if mel:  # Mel-scaled spectrogram

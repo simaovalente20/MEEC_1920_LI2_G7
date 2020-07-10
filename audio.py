@@ -8,13 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import soundfile as sf
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.multiclass import OneVsRestClassifier
 import struct
 import copy
 from collections import deque
 import threading
-from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero,extract_featurep
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero,extract_feature2,extract_feature3
 
 FILENAME = "other_sounds/z_file.wav"
 
@@ -29,49 +29,15 @@ QUEUE_TIME = RATE*RECORD_SECONDS
 #QUEUE_TIME = (int(RATE/(CHUNK*RECORD_SECONDS)))
 
 # Keyword Scaler/Model
-scaler_keyword = StandardScaler()
-scaler_keyword = pickle.load(open("utils_audio/scaler_keyword_aug.bin", "rb"))
-#model_keyword = MLPClassifier()
-#model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
-OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
-OvR_model_keyword = pickle.load(open("utils_audio/classifier_keyword_OvR_aug.model", "rb"))
-
-# Speaker Scaler/Model
-scaler_speaker = StandardScaler()
-scaler_speaker = pickle.load(open("utils_audio2/scaler_speaker_aug.bin", "rb"))
-#model_speaker = MLPClassifier()
-#model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
-OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker = pickle.load(open("utils_audio/classifier_speaker_OvR_aug.model", "rb"))
-
-OvR_model_keyword_augmented = OneVsRestClassifier(MLPClassifier())
-OvR_model_keyword_augmented = pickle.load(open("utils_audio/classifier_keyword_aug.model", "rb"))
 scaler_keyword_augmented = StandardScaler()
-scaler_keyword_augmented = pickle.load(open("utils_audio/scaler_keyword_aug.bin", "rb"))
-OvR_model_speaker_augmented = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker_augmented = pickle.load(open("utils_audio2/classifier_speaker_clf_aug.model", "rb"))
+scaler_keyword_augmented = pickle.load(open("utils_mfcc/scaler_keyword_aug.bin", "rb"))
+OvR_model_keyword_augmented = MLPClassifier()
+OvR_model_keyword_augmented = pickle.load(open("utils_mfcc/classifier_keyword_aug.model", "rb"))
+# Speaker Scaler/Model
+OvR_model_speaker_augmented = MLPClassifier()
+OvR_model_speaker_augmented = pickle.load(open("utils_audio2/classifier_speaker_aug.model", "rb"))
 scaler_speaker_augmented = StandardScaler()
 scaler_speaker_augmented = pickle.load(open("utils_audio2/scaler_speaker_aug.bin", "rb"))
-
-'''
-class audioThread(threading.Thread):
-    def __init__(self,ThreadId):
-        threading.Thread.__init__(self)
-        self.ThreadId = ThreadId
-        self.stopped = False
-
-    def stop(self):
-        self.stopped=True
-
-    def run(self):
-        while True:
-            if self.stopped:
-                self.stopped=False
-            return
-        print("asddasdasdasdasdadasd")
-        Audio.func_classifier()
-        time.sleep(0.1)
-'''
 
 class Audio:
     def __init__(self):
@@ -220,7 +186,93 @@ class Audio:
         print("finished recording")'''
         return self.frames
 
-    def extract_features_keyword(self, X):
+    def extract_features_keyword_augmented(self, X):
+        speaker_normalized=[]
+        Y = librosa.util.fix_length(X, RATE * 2)
+        features = extract_feature2(Y, RATE, mfcc=True)
+        speaker_normalized.append(features)
+
+        return speaker_normalized
+
+    def extract_features_speaker_augmented(self, X):
+        speaker_normalized = []
+
+        features = extract_feature3(X, RATE, pitch=True)
+        speaker_normalized.append(features)
+
+        return speaker_normalized
+
+    def realtime_predict_augmented(self, keyword, speaker):
+        speaker_normalized = scaler_speaker_augmented.transform(speaker)
+        keyword_normalized = scaler_keyword_augmented.transform(keyword)
+
+        keyword_prediction = OvR_model_keyword_augmented.predict(keyword_normalized)
+        keyword_probability = OvR_model_keyword_augmented.predict_proba(keyword_normalized)
+        speaker_prediction = OvR_model_speaker_augmented.predict(speaker_normalized)
+        keyword_result = keyword_prediction[0]
+        speaker_result = speaker_prediction[0]
+
+        print(keyword_probability)
+        if keyword_probability.max() > 0.85:
+            print(keyword_result)
+        else:
+            print("Repeat Word")
+        return keyword_result, speaker_result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Keyword Scaler/Model
+'''
+scaler_keyword = StandardScaler()
+scaler_keyword = pickle.load(open("utils_mfcc/scaler_keyword_robust_aug.bin", "rb"))
+model_keyword = MLPClassifier()
+model_keyword = pickle.load(open("utils_mfcc/classifier_keyword_aug.model", "rb"))
+OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
+OvR_model_keyword = pickle.load(open("utils_audio/classifier_keyword_OvR_aug.model", "rb"))
+# Speaker Scaler/Model
+scaler_speaker = StandardScaler()
+scaler_speaker = pickle.load(open("utils_audio2/scaler_speaker_aug.bin", "rb"))
+model_speaker = MLPClassifier()
+model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
+OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
+OvR_model_speaker = pickle.load(open("utils_audio/classifier_speaker_OvR_aug.model", "rb"))
+'''
+
+'''
+class audioThread(threading.Thread):
+    def __init__(self,ThreadId):
+        threading.Thread.__init__(self)
+        self.ThreadId = ThreadId
+        self.stopped = False
+
+    def stop(self):
+        self.stopped=True
+
+    def run(self):
+        while True:
+            if self.stopped:
+                self.stopped=False
+            return
+        print("asddasdasdasdasdadasd")
+        Audio.func_classifier()
+        time.sleep(0.1)
+'''
+
+
+'''    def extract_features_keyword(self, X):
         keyword_temp = []
         # X = np.fromstring(in_data,dtype=np.float32)
         stft = np.abs(librosa.stft(X, n_fft=1024))
@@ -265,33 +317,5 @@ class Audio:
         speaker_result = speaker_prediction[0]
         #keyword_result = keyword_list[str(keyword_prediction)]
         #speaker_result = speaker_list[str(speaker_prediction)]
-
-
         return keyword_result, speaker_result
-
-    def extract_features_keyword_augmented(self, X):
-        speaker_normalized=[]
-
-        features = extract_feature(X, RATE, mfcc=True, chroma=True, mel=True)
-        speaker_normalized.append(features)
-
-        return speaker_normalized
-
-    def extract_features_speaker_augmented(self, X):
-        speaker_normalized = []
-
-        features = extract_featurep(X, RATE, pitch=True)
-        speaker_normalized.append(features)
-
-        return speaker_normalized
-
-    def realtime_predict_augmented(self, keyword, speaker):
-        speaker_normalized = scaler_speaker_augmented.transform(speaker)
-        keyword_normalized = scaler_keyword_augmented.transform(keyword)
-        keyword_prediction = OvR_model_keyword_augmented.predict(keyword_normalized)
-        speaker_prediction = OvR_model_speaker_augmented.predict(speaker_normalized)
-
-        keyword_result = keyword_prediction[0]
-        speaker_result = speaker_prediction[0]
-
-        return keyword_result, speaker_result
+'''

@@ -7,10 +7,10 @@ import numpy as np
 import os, glob, pickle
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, RobustScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
-from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero, extract_feature2
 
 le = LabelEncoder()
 
@@ -23,6 +23,7 @@ def load_data(test_size = 0.2):
             basename = os.path.basename(file)   # get the base name of the audio file
             print("Grupo " + base_path)
             keyword = basename.split("_")[1]
+            print(keyword)
             #print(base_path.split("\\")[3] + "-" + keyword)
             # remove empty files (G1)
             sound_file = soundfile.SoundFile(file)
@@ -32,16 +33,16 @@ def load_data(test_size = 0.2):
                 continue
             # Raw wave
             sound_frame, sr = read_sounfile(file)
-            sd.play(sound_frame, sr)
-            features = extract_feature(sound_frame,sr,mfcc=True, chroma=True, mel=True)
+            #sd.play(sound_frame, sr)
+            features = extract_feature2(sound_frame,sr,mfcc=True,centroid=True)
             print(len(features))
             x.append(features)
             y.append(keyword)
             # Time Shift with padding
             frame_shift = aug_shift_zero(sound_frame,sr,0.2,shift_direction='both')
-            sd.play(frame_shift, sr)
             #sd.play(frame_shift, sr)
-            features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+            #sd.play(frame_shift, sr)
+            features = extract_feature2(frame_shift, sr, mfcc=True,centroid=True)
             print(len(features))
             x.append(features)
             y.append(keyword)
@@ -57,15 +58,15 @@ def load_data(test_size = 0.2):
                 # y.append(keyword)
             # Speed Slower
             frame_slower = aug_speed(sound_frame,0.9)
-            sd.play(frame_slower, sr)
-            features = extract_feature(frame_slower, sr, mfcc=True, chroma=True, mel=True)
+            #sd.play(frame_slower, sr)
+            features = extract_feature2(frame_slower, sr, mfcc=True,centroid=True)
             print(len(features))
             x.append(features)
             y.append(keyword)
             # Speed Faster
             frame_faster = aug_speed(sound_frame,1.1)
             #sd.play(frame_faster, sr)
-            features = extract_feature(frame_faster, sr, mfcc=True, chroma=True, mel=True)
+            features = extract_feature2(frame_faster, sr, mfcc=True,centroid=True)
             print(len(features))
             x.append(features)
             y.append(keyword)
@@ -73,19 +74,23 @@ def load_data(test_size = 0.2):
     list(le.classes_)
     yt=le.transform(y)
 
-    return train_test_split(np.array(x), y, test_size=test_size, stratify=y,random_state=True)
+    return train_test_split(x, y, test_size=test_size, stratify=y,random_state=True)
 
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)
 
 #https://scikit-learn.org/stable/modules/neural_networks_supervised.html#tips-on-practical-use
-scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
-scaler.fit(X_train)
-X_train = scaler.transform(X_train)
-X_test = scaler.transform(X_test)
+#scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
+#scaler.fit(X_train)
+#X_train = scaler.transform(X_train)
+#X_test = scaler.transform(X_test)
+
+transformer = RobustScaler().fit(X_train)
+X_train = transformer.transform(X_train)
+X_test = transformer.transform(X_test)
 
 if not os.path.isdir("utils_audio"):
     os.mkdir("utils_audio")
-pickle.dump(scaler, open('utils_audio/scaler_keyword_aug.bin','wb'))
+pickle.dump(transformer, open('utils_audio/scaler_keyword_robust_aug.bin','wb'))
 
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
 print("[+] Number of testing samples:", X_test.shape[0]) # number of samples in testing data
