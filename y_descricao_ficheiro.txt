@@ -29,3 +29,20 @@ Pasta utils_audio : Guar os testes atuais(04/07)
 
 __________________________________________
 z_temp: utilizado para debug espontaneos
+
+
+        '''
+        if len(self.frame_buffer) == 86:
+            frames = copy.copy(self.frame_buffer)
+            self.data = np.hstack(frames)
+            #print(self.data)
+            #print(len(self.data))
+            del self.frame_buffer[0:44]
+            #self.thread_class.start()
+            #print(max(self.data))
+            if max(self.data) >= 0.2:
+                thread_classifier = threading.Thread(target = self.func_classifier, args= [self.data])
+                thread_classifier.start()
+            else:
+                print("Speaker Louder")
+        '''

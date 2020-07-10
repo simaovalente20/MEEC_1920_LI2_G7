@@ -22,7 +22,7 @@ def extract_feature(X, sample_rate, **kwargs):
     mfcc = kwargs.get("mfcc")
     chroma = kwargs.get("chroma")
     mel = kwargs.get("mel")
-    stft = np.abs(librosa.stft(X, n_fft=1024))
+    stft = np.abs(librosa.stft(X, n_fft=1024,hop_length=512))
     result = np.array([])
     if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
         mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024).T, axis=0) #temporal averaging
@@ -64,30 +64,62 @@ def extract_feature3(X, sample_rate, **kwargs):
     mfcc = kwargs.get("mfcc")
     chroma = kwargs.get("chroma")
     pitch = kwargs.get("pitch")
+    cqt = kwargs.get("cqt")
+    tonnetz = kwargs.get("tonnetz")
     stft = np.abs(librosa.stft(X, n_fft=1024, hop_length=256))
+
     freqs = librosa.core.fft_frequencies(sample_rate)
-    trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
-    print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
+    harms = [1, 2, 3, 4]
+    weights = [1.0, 0.5, 0.33, 0.25]
+
+    #freqs = librosa.core.fft_frequencies(sample_rate)
+    #trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
+    #print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
     result = np.array([])
     if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=16, n_fft=1024).T, axis=0) #temporal averaging
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024,hop_length=256).T, axis=0) #temporal averaging
         result = np.hstack((result, mfccs))
     if chroma:                                                            # compute chroma
         chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, chroma))
     if pitch:
-        trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=512)
-        pitches, magnitudes = librosa.piptrack(trimmed,sample_rate,S=stft,n_fft=1024,hop_length=256,fmin=50.0,fmax=22050.0)
-        p = np.mean((pitches),axis = 1)
-        result = np.hstack((result, p))
-        m = np.mean((magnitudes), axis=1)
-        result = np.hstack((result, m))
+        #trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=512)
+        pitches, magnitudes = librosa.piptrack(X,sr = sample_rate,fmin=50.0,fmax=22050.0,threshold=1,ref=np.mean)
+        pitch_track = np.array(extract_max(pitches, pitches.shape))
+        #p = np.max((pitches).T,axis = 0)
+        result = np.hstack((result, pitch_track))
+        #m = np.mean((magnitudes).T, axis=0)
+        #result = np.hstack((result, m))
+    if cqt:
+        cqts = np.mean(librosa.feature.chroma_cqt(X, sr=sample_rate,).T,axis=0)#temporal averaging
+        result = np.hstack((result, cqts))
+    if tonnetz:
+        tonnetz = np.mean(librosa.feature.tonnetz(y=librosa.effects.harmonic(X), sr=sample_rate).T,axis=0)
+        result = np.hstack((result, tonnetz))
     return result
 
 def load_sound_file(file_name):
     data, sample_rate = soundfile.read(file_name,dtype='float32')
     return data, sample_rate
 
+def extract_max(pitches, shape):
+    new_pitches = []
+    for i in range(0, shape[1]):
+        new_pitches.append(np.max(pitches[:,i]))
+    return new_pitches
+
+def smooth(x,window_len=11,window='hanning'):
+        if window_len<3:
+                return x
+        if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+                raise(ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+        s=np.r_[2*x[0]-x[window_len-1::-1],x,2*x[-1]-x[-1:-window_len:-1]]
+        if window == 'flat': #moving average
+                w=np.ones(window_len,'d')
+        else:
+                w=eval('np.'+window+'(window_len)')
+        y=np.convolve(w/w.sum(),s,mode='same')
+        return y[window_len:-window_len+1]
 
 ''' Data augmentation Utils'''
 def plot_time_series(data,sr):
@@ -161,6 +193,7 @@ for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
         sound_frame = librosa.util.fix_length(sound_frame, sr*2)
         plot_time_series(sound_frame, sr)
         sd.play(sound_frame, sr)
+
 
         # data_noise = aug_add_noise(sound_frame)
         # plot_time_series(data_noise, sr)

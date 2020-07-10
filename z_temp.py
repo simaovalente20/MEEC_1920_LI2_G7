@@ -24,15 +24,37 @@ def read_sounfile(filename):
     #sd.play(trimmed, sample_rate)
     return X,sample_rate
 
-'''
-Resample
-Y_16k = librosa.resample(X, sample_rate, 16000)
-Trim
-trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
-print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
-plot_time_series(trimmed,sample_rate)
-sd.play(trimmed, sample_rate)
-'''
+def plot_spec(x,sr):
+    plt.figure(figsize=(14, 5))
+    librosa.display.specshow(x, sr=sr, x_axis='time', y_axis='hz')
+    # If to pring log of frequencies
+    plt.colorbar()
+
+def plot_mfcc(x,sr):
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(x, x_axis='time')
+    plt.colorbar()
+    plt.title('MFCC')
+    plt.tight_layout()
+    plt.show()
+
+def plot_chroma(x,sr):
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(x, y_axis='chroma', x_axis='time')
+    plt.colorbar()
+    plt.title('Chromagram')
+    plt.tight_layout()
+    plt.show()
+
+def plot_melspec(x,sr):
+    plt.figure(figsize=(10, 4))
+    S_dB = librosa.power_to_db(x, ref=np.max)
+    librosa.display.specshow(S_dB, x_axis='time',y_axis = 'mel', sr = sr,fmax = 8000)
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Mel-frequency spectrogram')
+    plt.tight_layout()
+    plt.show()
+
 #DataFlair - Extract features (mfcc, chroma, mel) from a sound file
 def extract_feature(X, sample_rate, **kwargs):
     mfcc = kwargs.get("mfcc")
@@ -41,9 +63,9 @@ def extract_feature(X, sample_rate, **kwargs):
     stft = np.abs(librosa.stft(X,n_fft=1024))
     result = np.array([])
     if mfcc: #Mel-frequency cepstral coefficients (MFCCs)
-        mfccs = np.stack(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=12, n_fft= 1024).T, axis=0) #temporal averaging
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft= 1024).T,axis=0) #temporal averaging
         result = np.hstack((result, mfccs))
-    if chroma: # Compute a chromagram from a waveform or power spectrogram.
+    if chroma: # Compute a chromagram - energy (magnitude) spectrum
         chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, chroma))
     if mel: # Mel-scaled spectrogram
@@ -51,65 +73,80 @@ def extract_feature(X, sample_rate, **kwargs):
         result = np.hstack((result, mel))
     return result
 
+def extract_feature_2(X, sample_rate, **kwargs):
+    mfcc = kwargs.get("mfcc")
+    chroma = kwargs.get("chroma")
+    mel = kwargs.get("mel")
+    stft = np.abs(librosa.stft(X,n_fft=1024))
+    if mfcc:  # Mel-frequency cepstral coefficients (MFCCs)
+        mfccs = librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024)  # temporal averaging
+        plot_mfcc(mfccs, sample_rate)
+    if chroma:  # Compute a chromagram - energy (magnitude) spectrum
+        # chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
+        chroma = librosa.feature.chroma_stft(S=stft, sr=sample_rate)  # temporal averaging
+        plot_chroma(chroma, sample_rate)
+    if mel:  # Mel-scaled spectrogram
+        # mel = np.mean(librosa.feature.melspectrogram(X,n_fft=1024, sr=sample_rate).T,axis=0)#temporal averaging
+        mel = librosa.feature.melspectrogram(X, n_fft=1024, sr=sample_rate)  # temporal averaging
+        plot_melspec(mel, sample_rate)
+    return 0
+
 def load_data(test_size = 0.2):
     x, y = [], []
     empty_files = []
-    i = 0
-    for base_path in glob.glob("Dataset\keyword_class\*"):
-        for file in glob.glob(base_path +"\*.wav"):
-            basefile = os.path.basename(file)   # get the base name of the audio file
-            base_class = base_path.split("\\")[2]
-            keyword = basefile.split("_")[1]
-            print(base_class + "  ->  " + keyword)
+    for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
+        print(base_path.split("\\")[2])
+        for file in glob.glob(base_path + "\*.wav"):
+            basename = os.path.basename(file)   # get the base name of the audio file
+            print("Grupo " + base_path)
+            keyword = basename.split("_")[1]
+            #print(base_path.split("\\")[3] + "-" + keyword)
             # remove empty files (G1)
             sound_file = soundfile.SoundFile(file)
             if len(sound_file.read(dtype='float32')) == 0:
                 print("Empty File : " + file)
                 empty_files.append(file)
                 continue
-            print(basefile)
             # Raw wave
             sound_frame, sr = read_sounfile(file)
-            print("Raw Wave")
-            features = extract_feature(sound_frame, sr, mfcc=True, chroma=True, mel=True)
+            sd.play(sound_frame, sr)
+            features = extract_feature_2(sound_frame,sr,mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
-            y.append(base_class)
-            # Shift
+            y.append(keyword)
+            # Time Shift with padding
             frame_shift = aug_shift_zero(sound_frame,sr,0.2,shift_direction='both')
-            print("Shifted Wave")
-            plot_time_series(frame_shift, sr)
             sd.play(frame_shift, sr)
-            features = extract_feature(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+            #sd.play(frame_shift, sr)
+            features = extract_feature_2(frame_shift, sr, mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
-            y.append(base_class)
+            y.append(keyword)
             # Add Noise
-                # frame_noise = aug_add_noise(sound_frame)
-                # features = extract_feature(frame_noise, sr, mfcc=True, chroma=True, mel=True)
-                # x.append(features)
-                # y.append(keyword)
+                #frame_noise = aug_add_noise(sound_frame)
+                #features = extract_feature(frame_noise, sr, mfcc=True, chroma=True, mel=True)
+                #x.append(features)
+                #y.append(keyword)
             # Pitch
-                # frame_pitch = aug_pitch(sound_frame, sr, 0.4)
-                # print("Pitch Wave")
+                # frame_pitch = aug_pitch(sound_frame,sr,1.2)
                 # features = extract_feature(frame_pitch, sr, mfcc=True, chroma=True, mel=True)
                 # x.append(features)
-                # y.append(base_class)
+                # y.append(keyword)
             # Speed Slower
-            frame_slower = aug_speed(sound_frame, 0.9)
-            print("Slower Wave")
-            features = extract_feature(frame_slower, sr, mfcc=True, chroma=True, mel=True)
+            frame_slower = aug_speed(sound_frame,0.9)
+            sd.play(frame_slower, sr)
+            features = extract_feature_2(frame_slower, sr, mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
-            y.append(base_class)
+            y.append(keyword)
             # Speed Faster
-            frame_faster = aug_speed(sound_frame, 1.1)
-            print("Faster Wave")
-            features = extract_feature(frame_faster, sr, mfcc=True, chroma=True, mel=True)
+            frame_faster = aug_speed(sound_frame,1.1)
+            #sd.play(frame_faster, sr)
+            features = extract_feature_2(frame_faster, sr, mfcc=True, chroma=True, mel=True)
+            print(len(features))
             x.append(features)
-            y.append(base_class)
-            print(i)
-            i = i + 1
-
-    return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
-
+            y.append(keyword)
+    return train_test_split(np.array(x), y, test_size=test_size, stratify=y,random_state=True)
 
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)
 
@@ -149,6 +186,16 @@ print(prfs)
 accuracy = metrics.accuracy_score(Y_test,Y_predict)
 print("Accuracy:")
 print(accuracy)
+
+'''
+Resample
+Y_16k = librosa.resample(X, sample_rate, 16000)
+Trim
+trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
+print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
+plot_time_series(trimmed,sample_rate)
+sd.play(trimmed, sample_rate)
+'''
 
 cr=metrics.classification_report(Y_test,Y_predict)
 print("Classification Report:")
