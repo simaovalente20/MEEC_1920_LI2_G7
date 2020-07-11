@@ -36,9 +36,9 @@ OvR_model_keyword_augmented = MLPClassifier()
 OvR_model_keyword_augmented = pickle.load(open("utils_mfcc/classifier_keyword_aug.model", "rb"))
 # Speaker Scaler/Model
 OvR_model_speaker_augmented = MLPClassifier()
-OvR_model_speaker_augmented = pickle.load(open("utils_mfcc/classifier_speaker_aug.model", "rb"))
+OvR_model_speaker_augmented = pickle.load(open("utils_mfcc/classifier_speaker_aug_40mfcc.model", "rb"))
 scaler_speaker_augmented = StandardScaler()
-scaler_speaker_augmented = pickle.load(open("utils_mfcc/scaler_speaker_aug.bin", "rb"))
+scaler_speaker_augmented = pickle.load(open("utils_mfcc/scaler_speaker_aug_40mfcc.bin", "rb"))
 
 class Audio:
     def __init__(self):
