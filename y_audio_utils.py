@@ -10,7 +10,6 @@ import os, glob, pickle
 #TODO: https://www.thepythoncode.com/article/building-a-speech-emotion-recognizer-using-sklearn
 word_command = {"Avancar", "Baixo ", "Centro", "Cima", "Direita", "Esquerda", "Parar", "Recuar"}
 
-
 ''' Feature Extraction Utils'''
 def read_sounfile(filename):
     with soundfile.SoundFile(filename) as sound_file:
