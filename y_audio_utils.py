@@ -76,7 +76,7 @@ def extract_feature3(X, sample_rate, **kwargs):
     #print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
     result = np.array([])
     if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
-        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024,hop_length=256).T, axis=0) #temporal averaging
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=13, n_fft=1024,hop_length=256).T, axis=0) #temporal averaging
         result = np.hstack((result, mfccs))
     if chroma:                                                            # compute chroma
         chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging

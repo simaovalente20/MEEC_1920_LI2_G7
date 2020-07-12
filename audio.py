@@ -36,9 +36,9 @@ OvR_model_keyword_augmented = MLPClassifier()
 OvR_model_keyword_augmented = pickle.load(open("utils_mfcc/classifier_keyword_aug.model", "rb"))
 # Speaker Scaler/Model
 OvR_model_speaker_augmented = MLPClassifier()
-OvR_model_speaker_augmented = pickle.load(open("utils_mfcc/classifier_speaker_aug_40mfcc.model", "rb"))
+OvR_model_speaker_augmented = pickle.load(open("utils_mfcc/classifier_speaker_aug_13mfcc.model", "rb"))
 scaler_speaker_augmented = StandardScaler()
-scaler_speaker_augmented = pickle.load(open("utils_mfcc/scaler_speaker_aug_40mfcc.bin", "rb"))
+scaler_speaker_augmented = pickle.load(open("utils_mfcc/scaler_speaker_aug_13mfcc.bin", "rb"))
 
 class Audio:
     def __init__(self):
@@ -197,7 +197,7 @@ class Audio:
     def extract_features_speaker_augmented(self, X):
         speaker_normalized = []
 
-        features = extract_feature3(X, RATE,mfcc=True,chroma=True)
+        features = extract_feature3(X, RATE,mfcc=True)
         speaker_normalized.append(features)
 
         return speaker_normalized
