@@ -38,6 +38,8 @@ def load_data(test_size = 0.2):
 
             sound_clipped = librosa.util.fix_length(sound_frame, sr * 2)
             sound_2s = aug_add_noise(sound_clipped)
+            trimmed, index = librosa.effects.trim(sound_2s, top_db=30)
+            print(librosa.get_duration(sound_2s,sr), librosa.get_duration(trimmed,sr))
             # sd.play(sound_frame, sr)
             features = extract_feature3(sound_2s, sr, mfcc=True)
             print(len(features))
@@ -45,7 +47,8 @@ def load_data(test_size = 0.2):
             y.append(speaker)
             i = 1
             for i in range(1, 10):
-                frame_shift = aug_shift(sound_2s, sr, i)
+                frame_shift = aug_shift(trimmed, sr, i)
+                print(librosa.get_duration(sound_2s,sr), librosa.get_duration(trimmed,sr))
                 features = extract_feature3(frame_shift, sr, mfcc=True)
                 print(len(features))
                 x.append(features)
