@@ -22,9 +22,9 @@ vid = video.Video()
 #XX=np.zeros((8*20,67), dtype=float) #68,2)
 nGrupos=8;
 
+
+
 '''
-
-
 XX=np.zeros((nGrupos*20,68*68-68), dtype=float)
 YY=np.zeros((nGrupos*20), dtype = int)
 
@@ -62,8 +62,8 @@ pickle.dump(YY, open('shapeY.sav', 'wb'))
         
 XX=np.zeros((nGrupos*20,68*68-68), dtype=float) #68,2)
 YY=np.zeros((nGrupos*20), dtype = int)
-XX[:,:] = pickle.load(open('../shapeX.sav', 'rb'))
-YY[:] = pickle.load(open('../shapeY.sav', 'rb'))
+XX[:,:] = pickle.load(open('shapeX.sav', 'rb'))
+YY[:] = pickle.load(open('shapeY.sav', 'rb'))
 
 
 X_train, X_test, Y_train, Y_test = train_test_split(XX,YY, test_size=0.2, stratify = YY, random_state=True)
@@ -73,7 +73,7 @@ scaler.fit(X_train)
 X_train=scaler.transform(X_train)
 X_test=scaler.transform(X_test)
 
-model = LinearSVC(max_iter=5000,dual=False,fit_intercept=False)
+model = LinearSVC(max_iter=10000, fit_intercept=False)
 #model = SVC(C=25.0,gamma=0.00001)  #C=25.0,gamma=0.0001)
 #model = KNeighborsClassifier(n_neighbors=3)
 #model = DecisionTreeClassifier(max_depth=50)
@@ -82,8 +82,8 @@ model = LinearSVC(max_iter=5000,dual=False,fit_intercept=False)
 #model = MLPClassifier(hidden_layer_sizes=(300, 150,50), learning_rate_init=0.001, max_iter=300,shuffle=False)
 
 model.fit(X_train,Y_train)
-pickle.dump(model, open('../LinearSVC.sav', 'wb'))
-pickle.dump(scaler, open('../Scaler.sav', 'wb'))
+pickle.dump(model, open('LinearSVC.sav', 'wb'))
+pickle.dump(scaler, open('Scaler.sav', 'wb'))
 
 Y_predict = model.predict(X_test)
 

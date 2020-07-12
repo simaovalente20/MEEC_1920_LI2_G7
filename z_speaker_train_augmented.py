@@ -49,15 +49,15 @@ def load_data(test_size = 0.2):
                 # x.append(features)
                 # y.append(speaker)
             # Speed Slower
-                # frame_slower = aug_speed(sound_frame,0.9)
-                # features = extract_feature_speaker(frame_slower, sr, mfcc=True,chroma=True)
-                # x.append(features)
-                # y.append(speaker)
+            frame_slower = aug_speed(sound_frame,0.9)
+            features = extract_feature_speaker(frame_slower, sr, mfcc=True,chroma=True)
+            x.append(features)
+            y.append(speaker)
             # Speed Faster
-                # frame_faster = aug_speed(sound_frame,1.1)
-                # features = extract_feature_speaker(frame_faster, sr, mfcc=True,chroma=True)
-                # x.append(features)
-                # y.append(speaker)
+            frame_faster = aug_speed(sound_frame,1.1)
+            features = extract_feature_speaker(frame_faster, sr, mfcc=True,chroma=True)
+            x.append(features)
+            y.append(speaker)
     #return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
     return train_test_split(np.array(x), y, test_size=0.2, stratify = y, random_state=True)
 

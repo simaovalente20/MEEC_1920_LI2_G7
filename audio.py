@@ -1,4 +1,3 @@
-
 import sys, os, glob, pickle,time
 import pyaudio
 import wave
@@ -216,6 +215,7 @@ class Audio:
         if keyword_probability.max() > 0.85:
             print(keyword_result)
         else:
+            keyword_result="Repeat Word"
             print("Repeat Word")
         return keyword_result, speaker_result
 
