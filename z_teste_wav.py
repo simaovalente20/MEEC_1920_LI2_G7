@@ -8,24 +8,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero,extract_feature2,extract_feature3
 from sklearn import metrics
 
+
 # Keyword Scaler/Model
-scaler_keyword = StandardScaler()
-scaler_keyword = pickle.load(open("utils_audio/scaler_keyword_aug.bin", "rb"))
-#model_keyword = MLPClassifier()
-#model_keyword = pickle.load(open("result/mlp_classifier_keyword.model", "rb"))
-OvR_model_keyword = OneVsRestClassifier(MLPClassifier())
-OvR_model_keyword = pickle.load(open("utils_audio/classifier_keyword_aug.model", "rb"))
-
+scaler_keyword_augmented = StandardScaler()
+scaler_keyword_augmented = pickle.load(open("utils_mfcc/scaler_keyword_aug.bin", "rb"))
+OvR_model_keyword_augmented = MLPClassifier()
+OvR_model_keyword_augmented = pickle.load(open("utils_mfcc/classifier_keyword_aug.model", "rb"))
 # Speaker Scaler/Model
-scaler_speaker = StandardScaler()
-scaler_speaker = pickle.load(open("utils_audio/scaler_speaker_aug.bin", "rb"))
-#model_speaker = MLPClassifier()
-#model_speaker = pickle.load(open("result/mlp_classifier_speaker.model", "rb"))
-OvR_model_speaker = OneVsRestClassifier(MLPClassifier())
-OvR_model_speaker = pickle.load(open("utils_audio/classifier_speaker_OvR_aug.model", "rb"))
-
+OvR_model_speaker_augmented = MLPClassifier()
+OvR_model_speaker_augmented = pickle.load(open("utils_mfcc/classifier_speaker_aug_13mfcc.model", "rb"))
+scaler_speaker_augmented = StandardScaler()
+scaler_speaker_augmented = pickle.load(open("utils_mfcc/scaler_speaker_aug_13mfcc.bin", "rb"))
 
 #DataFlair - Extract features (mfcc, chroma, mel) from a sound file
 def extract_feature(file_name, **kwargs):
@@ -69,20 +65,21 @@ def extract_feature_speaker(file_name, **kwargs):
             result = np.hstack((result, mel))
     return result
 
-filename = ("teste_file//baixo_noise_1.wav")
+filename = ("teste_file//baixo_noise_3.wav")
 #filename = ("teste_file//baixo_teste.wav")
 #filename = ("teste_file//G7_Baixo.wav")
 #filename = ("teste_file//teste_baixo_8.wav")
 
-sound_file = soundfile.SoundFile(filename)
-keyword_features = extract_feature(filename, mfcc=True, chroma=True, mel=True)
-speaker_features = extract_feature(filename, mfcc=True, chroma=True, mel=True)
+sound_file, rate = read_sounfile(filename)
+keyword_features = extract_feature2(sound_file, 44100, mfcc=True)
+speaker_features = extract_feature3(sound_file, 44100,mfcc=True)
 
-keyword_normalized = scaler_keyword.transform(keyword_features.reshape(1, -1))
-speaker_normalized = scaler_speaker.transform(speaker_features.reshape(1, -1))
 
-keyword_prediction = OvR_model_keyword.predict(keyword_normalized)
-speaker_prediction = OvR_model_speaker.predict(speaker_normalized)
+keyword_normalized = scaler_keyword_augmented.transform(keyword_features.reshape(1, -1))
+speaker_normalized = scaler_speaker_augmented.transform(speaker_features.reshape(1, -1))
+
+keyword_prediction = OvR_model_keyword_augmented.predict(keyword_normalized)
+speaker_prediction = OvR_model_speaker_augmented.predict(speaker_normalized)
 
 keyword_result = keyword_prediction[0]
 speaker_result = speaker_prediction[0]

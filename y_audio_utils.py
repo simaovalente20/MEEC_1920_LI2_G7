@@ -66,11 +66,9 @@ def extract_feature3(X, sample_rate, **kwargs):
     cqt = kwargs.get("cqt")
     tonnetz = kwargs.get("tonnetz")
     stft = np.abs(librosa.stft(X, n_fft=1024, hop_length=256))
-
     freqs = librosa.core.fft_frequencies(sample_rate)
     harms = [1, 2, 3, 4]
     weights = [1.0, 0.5, 0.33, 0.25]
-
     #freqs = librosa.core.fft_frequencies(sample_rate)
     #trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
     #print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
@@ -192,6 +190,12 @@ for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
         sound_frame = librosa.util.fix_length(sound_frame, sr*2)
         plot_time_series(sound_frame, sr)
         sd.play(sound_frame, sr)
+
+        i = 1
+        for i in range(1, 10):
+            frame_shift = aug_shift(sound_frame, sr, i)
+            plot_time_series(frame_shift, sr)
+            sd.play(frame_shift, sr)
 
 
         # data_noise = aug_add_noise(sound_frame)

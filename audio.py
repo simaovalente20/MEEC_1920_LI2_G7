@@ -156,7 +156,8 @@ class Audio:
 
     def func_classifier(self,data):
         keyword = self.extract_features_keyword_augmented(data)
-        speaker = self.extract_features_speaker_augmented(data)
+        trimmed, index = librosa.effects.trim(data, top_db=30)
+        speaker = self.extract_features_speaker_augmented(trimmed)
         self.keyword_prd , self.speaker_prd = self.realtime_predict_augmented(keyword,speaker)
         #keyword = self.extract_features_keyword_augmented(data, 44100)
         #speaker = self.extract_features_speaker_augmented(data, 44100)

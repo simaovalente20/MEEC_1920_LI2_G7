@@ -69,8 +69,6 @@ class Video:
 			# Convert dlib's rectangle to a OpenCV-style bounding box
 			(x, y, w, h) = face_utils.rect_to_bb(rect)
 			cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-
 		return image,image_gray,rects
 
 	# Find landmarks in the face
