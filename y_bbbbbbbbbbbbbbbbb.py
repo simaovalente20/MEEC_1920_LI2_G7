@@ -12,6 +12,8 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
 from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero, extract_feature2,aug_shift,extract_feature3
 
+import matplotlib.pyplot as plt
+
 def load_data(test_size = 0.2):
     x, y = [], []
     empty_files = []
@@ -30,6 +32,10 @@ def load_data(test_size = 0.2):
                 continue
             # Raw wave
             sound_frame, sr = read_sounfile(file)
+
+            #plt.plot(sound_frame)
+            #plt.show()
+
             sound_clipped = librosa.util.fix_length(sound_frame, sr * 2)
             sound_2s = aug_add_noise(sound_clipped)
             # sd.play(sound_frame, sr)

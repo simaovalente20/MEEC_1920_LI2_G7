@@ -121,9 +121,7 @@ class Video:
 			predict = model.predict(normalize)
 			probability = model._predict_proba_lr(normalize)
 			max = probability.max()
-			print(probability.max())
 			probability = np.delete(probability, probability.argmax())
-			print(probability.max())
 			if max > 0.25 and max-probability.max()>0.02:
 				cv2.putText(image, "Grupo " + str(predict), (x, y - 50), 0, 1, (0, 255, 0))
 				cv2.putText(image, str(max), (x, y - 10), 0, 1, (0, 255, 0))

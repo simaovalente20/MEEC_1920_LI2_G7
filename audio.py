@@ -193,8 +193,12 @@ class Audio:
         speaker_normalized.append(features)
         return speaker_normalized
 
+    def aug_shift(data, sr, i):
+        return np.roll(data, int((sr * 2) * (i / 8)))
+
     def extract_features_speaker_augmented(self, X):
         speaker_normalized = []
+        x, y = [], []
 
         features = extract_feature3(X, RATE,mfcc=True)
         speaker_normalized.append(features)

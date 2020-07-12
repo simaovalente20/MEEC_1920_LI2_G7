@@ -24,14 +24,12 @@ class myThreadVideo (threading.Thread):
 
    def run(self):
        while True:
-           print("video 1")
            if self.stopped:
                self.stopped=False
                cam.close()
                return
            grabFrame()
            time.sleep(0.1)
-           print("video 2")
 
 
 
