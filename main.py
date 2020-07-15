@@ -1,5 +1,4 @@
 import sys
-import soundfile as sf
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QTimer, qVersion
@@ -7,8 +6,6 @@ import numpy as np
 import video
 import audio
 import pyqtgraph as pg
-from pyqtgraph import PlotWidget, plot
-import matplotlib.pyplot as plt
 import threading
 import time
 
@@ -31,14 +28,6 @@ class myThreadVideo (threading.Thread):
            grabFrame()
            time.sleep(0.1)
 
-
-
-
-#TODO threading for performance improvement
-#TODO Remove mic close error
-#TODO spectogram graph (Qt Combo Box)
-
-FILENAME = "other_sounds/z_file.wav"
 
 # Convert a Mat to a Pixmap
 def img2pixmap(image):
@@ -83,7 +72,6 @@ def on_cameraON_clicked():
     global thread1
     thread1= myThreadVideo(1)
     thread1.start()
-    #thread1.join()
 
 # Stops image capture
 def on_cameraOFF_clicked():
@@ -98,19 +86,6 @@ def on_micOn_clicked():
     window.btn_micOff.setEnabled(True)
     mic.open()
     qtimerRecord.start()
-    '''clip = mic.get_audio_input_stream()
-    sound_clip , sample_rate = sf.read(FILENAME)
-    #keyword = mic.extract_features_keyword(sound_clip)
-    #speaker = mic.extract_features_speaker(sound_clip)
-    #keyword_prd , speaker_prd = mic.realtime_predict(keyword,speaker)
-    keyword = mic.extract_features_keyword_augmented(sound_clip,sample_rate)
-    speaker = mic.extract_features_speaker_augmented(sound_clip,sample_rate)
-    keyword_prd, speaker_prd = mic.realtime_predict_augmented(keyword, speaker)
-    print(keyword_prd)
-    print(speaker_prd)
-    '''
-    '''PyQtGraph plot'''
-    #audio_waveform.setData(frame)
 
 # Stops sound capture
 def on_micOff_clicked():
@@ -124,7 +99,6 @@ def on_screenshot():
     cam.screenshot()
 
 def closeEvent():
-    #on_cameraOFF_clicked()
     print("close")
 
 
@@ -148,7 +122,6 @@ window.btn_micOff.setEnabled(False)
 window.label_videoCam.setScaledContents(True)
 window.btn_screenshot.clicked.connect(on_screenshot)
 window.btn_screenshot.setEnabled(False)
-#window.closeEvent.connect(closeEvent)
 
 # Audio plot time domain waveform
 audio_plot = window.plotWidget
@@ -157,16 +130,7 @@ pg.PlotWidget.getPlotItem(audio_plot).showGrid(True, True)
 pg.PlotWidget.getPlotItem(audio_plot).addLegend()
 pg.PlotWidget.setBackground(audio_plot,'w')
 audio_waveform = audio_plot.plot(pen=(24, 215, 248), name = "Waveform")
-#pg.PlotWidget.setAntialiasing(window.plotWidget,aa=1)
 total_data = []
-
-#last_speaker= window.lineEdit_lastSpeakerId
-#last_keyword= window.lineEdit_lastKeyword
-
-# Image capture timer
-#qtimerFrame = QTimer()
-#qtimerFrame.timeout.connect(grabFrame)
-#threading.Thread.start(grabFrame())
 
 # Micro timer
 qtimerRecord = QTimer()

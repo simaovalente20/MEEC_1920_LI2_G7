@@ -48,16 +48,6 @@ class Video:
 		ret, image = self.cam.read()
 		return image
 
-	# Detection of faces in an image with opencv
-	def detectFaces_opencv(self, image):
-		self.image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		# Detect faces
-		self.faces = face_cascade.detectMultiScale(self.image_gray, 1.1, 4)
-		# Draw rectangle around the faces
-		for (x, y, w, h) in self.faces:
-			cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 0), 2)
-		return image
-
 	# Detection of faces in an image with dlib
 	def detectFaces_dlib(self, image):
 		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -109,6 +99,7 @@ class Video:
 							distances[(i * 68) + j - (i + 1)] = dist_nose / distance
 		return image, distances, rects
 
+
 	def classify(self,image):
 
 		image, shape, rects = self.getLandmaks(image.copy())
@@ -126,70 +117,6 @@ class Video:
 			else:
 				cv2.putText(image, "Desconhecido", (x, y - 10), 0, 1, (0, 0, 255))
 		self.imagAtual=image
-		return image
-
-	def classifyMultiple(self,image):
-
-		image, shape, rects = self.getLandmaks(image.copy())
-
-		result=[]
-
-		if len(rects) != 0:
-			(x, y, w, h) = face_utils.rect_to_bb(rects[0])
-			normalize = scaler.transform(np.array(shape).reshape(1, -1))
-
-			# predict1 = model1.predict(normalize)
-			# predict2 = model2.predict(normalize)
-			# predict3 = model3.predict(normalize)
-			# predict4 = model4.predict(normalize)
-			# predict5 = model5.predict(normalize)
-			# predict6 = model6.predict(normalize)
-			# predict7 = model7.predict(normalize)
-			# predict8 = model8.predict(normalize)
-			#
-			# probability1 = model1._predict_proba_lr(normalize)
-			# probability2 = model2._predict_proba_lr(normalize)
-			# probability3 = model3._predict_proba_lr(normalize)
-			# probability4 = model4._predict_proba_lr(normalize)
-			# probability5 = model5._predict_proba_lr(normalize)
-			# probability6 = model6._predict_proba_lr(normalize)
-			# probability7 = model7._predict_proba_lr(normalize)
-			# probability8 = model8._predict_proba_lr(normalize)
-			#
-			# print("Grupo 1: ", predict1, probability1.max())
-			# print("Grupo 2: ", predict2, probability2.max())
-			# print("Grupo 3: ", predict3, probability3.max())
-			# print("Grupo 4: ", predict4, probability4.max())
-			# print("Grupo 5: ", predict5, probability5.max())
-			# print("Grupo 6: ", predict6, probability6.max())
-			# print("Grupo 7: ", predict7, probability7.max())
-			# print("Grupo 8: ", predict8, probability8.max())
-			#
-			# result.append([predict1[0], probability1.max()])
-			# result.append([predict2[0], probability2.max()])
-			# result.append([predict3[0], probability3.max()])
-			# result.append([predict4[0], probability4.max()])
-			# result.append([predict5[0], probability5.max()])
-			# result.append([predict6[0], probability6.max()])
-			# result.append([predict7[0], probability7.max()])
-			# result.append([predict8[0], probability8.max()])
-
-
-			max=result[0]
-			max[1]=0
-
-			for i in range(1,len(result)):
-				#print(result[i])
-				#print(result[i][0])
-				#print(result[i].pop(0).pop())
-				print(max[1])
-				if result[i][0]== 1:
-					if result[i][1]>max[1]:
-						max[0]=i+1
-						max[1]=result[i][1]
-
-			print("Máximo", max)
-
 		return image
 
 	def training(self,image):
@@ -239,3 +166,26 @@ class Video:
 	def screenshot(self):
 		if type(self.imagAtual)!=type(None):
 			cv2.imwrite("screenshot.png",self.imagAtual)
+
+
+
+	'''	def classifyMultiple(self,image):
+			image, shape, rects = self.getLandmaks(image.copy())
+			result=[]
+			if len(rects) != 0:
+				(x, y, w, h) = face_utils.rect_to_bb(rects[0])
+				normalize = scaler.transform(np.array(shape).reshape(1, -1))
+				max=result[0]
+				max[1]=0
+
+				for i in range(1,len(result)):
+					print(max[1])
+					if result[i][0]== 1:
+						if result[i][1]>max[1]:
+							max[0]=i+1
+							max[1]=result[i][1]
+
+				print("Máximo", max)
+
+			return image
+		'''
