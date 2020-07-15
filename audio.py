@@ -218,7 +218,6 @@ class audioThread(threading.Thread):
         threading.Thread.__init__(self)
         self.ThreadId = ThreadId
         self.stopped = False
-
     def stop(self):
         self.stopped=True
 
@@ -231,8 +230,6 @@ class audioThread(threading.Thread):
         Audio.func_classifier()
         time.sleep(0.1)
 '''
-
-
 '''    def extract_features_keyword(self, X):
         keyword_temp = []
         # X = np.fromstring(in_data,dtype=np.float32)
