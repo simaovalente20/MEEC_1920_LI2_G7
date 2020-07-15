@@ -73,7 +73,6 @@ def load_data(test_size = 0.2):
     le.fit(y)
     list(le.classes_)
     yt=le.transform(y)
-
     return train_test_split(x, y, test_size=test_size, stratify=y,random_state=True)
 
 X_train, X_test, Y_train, Y_test = load_data(test_size=0.25)

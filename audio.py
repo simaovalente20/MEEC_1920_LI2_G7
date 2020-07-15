@@ -94,17 +94,6 @@ class Audio:
                 return None, pyaudio.paComplete
         return None, pyaudio.paContinue
 
-        '''self.d.append(in_data)
-        # If 2s worth of audio is collected, copy to secondary buffer and pass to thread function
-        if len(self.d) == QUEUE_TIME:
-            frames = copy.copy(self.d)
-            thread = threading.Thread(target=self.prd_complete())
-            thread.start()
-            self.d.clear()
-            print("2s Buffer")
-        return in_data, pyaudio.paContinue
-        '''
-
     def get_frames(self):
         '''
         with self.lock:
@@ -138,21 +127,6 @@ class Audio:
                 thread_classifier.join()
             else:
                 print("Speaker Louder")
-        '''
-        if len(self.frame_buffer) == 86:
-            frames = copy.copy(self.frame_buffer)
-            self.data = np.hstack(frames)
-            #print(self.data)
-            #print(len(self.data))
-            del self.frame_buffer[0:44]
-            #self.thread_class.start()
-            #print(max(self.data))
-            if max(self.data) >= 0.1:
-                thread_classifier = threading.Thread(target = self.func_classifier, args= [self.data])
-                thread_classifier.start()
-            else:
-                print("Speaker Louder")
-        '''
 
     def func_classifier(self,data):
         keyword = self.extract_features_keyword_augmented(data)
@@ -181,10 +155,6 @@ class Audio:
         self.stream.stop_stream()
         self.stream.close()
         self.save(FILENAME)
-        '''print("* recording")
-        frames_mono = sounddevice.rec(int(RATE * FEED_DURATION), samplerate=RATE, channels=1,dtype='float32')
-        sounddevice.wait()
-        print("finished recording")'''
         return self.frames
 
     def extract_features_keyword_augmented(self, X):
@@ -223,19 +193,6 @@ class Audio:
             keyword_result="Repeat Word"
             print("Repeat Word")
         return keyword_result, speaker_result
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Keyword Scaler/Model

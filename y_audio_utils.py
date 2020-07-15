@@ -23,13 +23,13 @@ def extract_feature(X, sample_rate, **kwargs):
     mel = kwargs.get("mel")
     stft = np.abs(librosa.stft(X, n_fft=1024,hop_length=512))
     result = np.array([])
-    if mfcc:                                                           #Mel-frequency cepstral coefficients (MFCCs)
+    if mfcc:    #Mel-frequency cepstral coefficients (MFCCs)
         mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40, n_fft=1024).T, axis=0) #temporal averaging
         result = np.hstack((result, mfccs))
-    if chroma:                                                            # compute chroma
+    if chroma:  # compute chroma
         chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, chroma))
-    if mel:                                                                 # Mel-scaled spectrogram
+    if mel:    # Mel-scaled spectrogram
         mel = np.mean(librosa.feature.melspectrogram(X,n_fft=1024, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, mel))
     return result
@@ -66,10 +66,6 @@ def extract_feature3(X, sample_rate, **kwargs):
     cqt = kwargs.get("cqt")
     tonnetz = kwargs.get("tonnetz")
     stft = np.abs(librosa.stft(X, n_fft=1024, hop_length=256))
-    freqs = librosa.core.fft_frequencies(sample_rate)
-    harms = [1, 2, 3, 4]
-    weights = [1.0, 0.5, 0.33, 0.25]
-    #freqs = librosa.core.fft_frequencies(sample_rate)
     #trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=256)
     #print(librosa.get_duration(X,sample_rate), librosa.get_duration(trimmed,sr=sample_rate))
     result = np.array([])
@@ -80,7 +76,6 @@ def extract_feature3(X, sample_rate, **kwargs):
         chroma = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T,axis=0)#temporal averaging
         result = np.hstack((result, chroma))
     if pitch:
-        #trimmed, index = librosa.effects.trim(X, top_db=30, frame_length=1024, hop_length=512)
         pitches, magnitudes = librosa.piptrack(X,sr = sample_rate,fmin=50.0,fmax=22050.0,threshold=1,ref=np.mean)
         pitch_track = np.array(extract_max(pitches, pitches.shape))
         #p = np.max((pitches).T,axis = 0)
@@ -161,7 +156,7 @@ def aug_shift(data,sr,i):
     return  np.roll(data, int((sr*2) *(i/8)))
 
 
-'''tempo  =0
+'''tempo  = 0
 empty_files = []
 for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
     print(base_path.split("\\")[2])
@@ -196,8 +191,6 @@ for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
             frame_shift = aug_shift(sound_frame, sr, i)
             plot_time_series(frame_shift, sr)
             sd.play(frame_shift, sr)
-
-
         # data_noise = aug_add_noise(sound_frame)
         # plot_time_series(data_noise, sr)
         # sd.play(data_noise, sr)

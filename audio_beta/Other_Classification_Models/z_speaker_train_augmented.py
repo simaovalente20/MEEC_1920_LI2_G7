@@ -10,9 +10,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler,RobustScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
-from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero, extract_feature2,aug_shift,extract_feature3
-
-import matplotlib.pyplot as plt
+from y_audio_utils import read_sounfile, extract_feature,extract_featurep, aug_speed, aug_add_noise, aug_shift_zero
 
 def load_data(test_size = 0.2):
     x, y = [], []
@@ -32,27 +30,14 @@ def load_data(test_size = 0.2):
                 continue
             # Raw wave
             sound_frame, sr = read_sounfile(file)
-
-            #plt.plot(sound_frame)
-            #plt.show()
-
-            sound_clipped = librosa.util.fix_length(sound_frame, sr * 2)
-            sound_2s = aug_add_noise(sound_clipped)
-            trimmed, index = librosa.effects.trim(sound_2s, top_db=30)
-            print(librosa.get_duration(sound_2s,sr), librosa.get_duration(trimmed,sr))
-            # sd.play(sound_frame, sr)
-            features = extract_feature3(sound_2s, sr, mfcc=True)
-            print(len(features))
+            features = extract_featurep(sound_frame,sr,pitch=True)
             x.append(features)
             y.append(speaker)
-            i = 1
-            for i in range(1, 10):
-                frame_shift = aug_shift(trimmed, sr, i)
-                print(librosa.get_duration(sound_2s,sr), librosa.get_duration(trimmed,sr))
-                features = extract_feature3(frame_shift, sr, mfcc=True)
-                print(len(features))
-                x.append(features)
-                y.append(speaker)
+            # Shift
+            frame_shift = aug_shift_zero(sound_frame,sr,0.2,shift_direction='both')
+            features = extract_featurep(frame_shift, sr, pitch=True)
+            x.append(features)
+            y.append(speaker)
             # Add Noise
                 #frame_noise = aug_add_noise(sound_frame)
                 #features = extract_feature(frame_noise, sr, mfcc=True, chroma=True, mel=True)
@@ -64,15 +49,15 @@ def load_data(test_size = 0.2):
                 # x.append(features)
                 # y.append(speaker)
             # Speed Slower
-                # frame_slower = aug_speed(sound_frame,0.9)
-                # features = extract_feature_speaker(frame_slower, sr, mfcc=True,chroma=True)
-                # x.append(features)
-                # y.append(speaker)
+            frame_slower = aug_speed(sound_frame,0.9)
+            features = extract_feature_speaker(frame_slower, sr, mfcc=True,chroma=True)
+            x.append(features)
+            y.append(speaker)
             # Speed Faster
-                # frame_faster = aug_speed(sound_frame,1.1)
-                # features = extract_feature_speaker(frame_faster, sr, mfcc=True,chroma=True)
-                # x.append(features)
-                # y.append(speaker)
+            frame_faster = aug_speed(sound_frame,1.1)
+            features = extract_feature_speaker(frame_faster, sr, mfcc=True,chroma=True)
+            x.append(features)
+            y.append(speaker)
     #return train_test_split(np.array(x), y, test_size=test_size,random_state=7)
     return train_test_split(np.array(x), y, test_size=0.2, stratify = y, random_state=True)
 
@@ -84,24 +69,26 @@ scaler.fit(X_train)
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
 
-transformer = RobustScaler().fit(X_train)
+#transformer = RobustScaler().fit(X_train)
 #X_train = transformer.transform(X_train)
 #X_test = transformer.transform(X_test)
 
-if not os.path.isdir("utils_mfcc"):
-    os.mkdir("utils_mfcc")
-pickle.dump(scaler, open('utils_mfcc/scaler_speaker_aug_13mfcc.bin', 'wb'))
-pickle.dump(transformer, open('utils_mfcc/scaler_speaker_robust_aug_13mfcc.bin', 'wb'))
+if not os.path.isdir("../Other_Classifier_Out/utils_audio2"):
+    os.mkdir("../Other_Classifier_Out/utils_audio2")
+pickle.dump(scaler, open('../Other_Classifier_Out/utils_audio2/scaler_speaker_aug.bin', 'wb'))
 
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
 print("[+] Number of testing samples:", X_test.shape[0]) # number of samples in testing data
 print("[+] Number of features:", X_train.shape[1]) # number of features used, this is a vector of features extracted using extract_features() function
-model = MLPClassifier(alpha=0.0001, batch_size=256, epsilon=1e-08, hidden_layer_sizes=(300), learning_rate='adaptive',max_iter=500)
+
+model = MLPClassifier(alpha=0.01, batch_size=256, epsilon=1e-08, hidden_layer_sizes=(300, 150,50), learning_rate='adaptive',max_iter=500)
 
 print("[*] Training the model...")
 model.fit(X_train,Y_train)
+
 #clf = OneVsRestClassifier(model)
 #clf= clf.fit(X_train, Y_train)
+
 
 Y_predict = model.predict(X_test)
 #Y_predict = clf.predict(X_test)
@@ -109,20 +96,24 @@ Y_predict = model.predict(X_test)
 cm= metrics.confusion_matrix(Y_test, Y_predict)
 print("Confusion Matrix:")
 print(cm)
+
 prfs = metrics.precision_recall_fscore_support(Y_test, Y_predict)
 print("Precision Recall Fscor Support:")
 print(prfs)
+
+
 accuracy = metrics.accuracy_score(Y_test,Y_predict)
 print("Accuracy:")
 print(accuracy)
+
 cr=metrics.classification_report(Y_test,Y_predict)
 print("Classification Report:")
 print(cr)
 
 # now we save the model
 # make result directory if doesn't exist yet
-if not os.path.isdir("utils_mfcc"):
-    os.mkdir("utils_mfcc")
-pickle.dump(model, open("utils_mfcc/classifier_speaker_aug_13mfcc.model", "wb"))
+if not os.path.isdir("../Other_Classifier_Out/utils_audio2"):
+    os.mkdir("../Other_Classifier_Out/utils_audio2")
+pickle.dump(model, open("../Other_Classifier_Out/utils_audio2/classifier_speaker_aug.model", "wb"))
 
 stop=0

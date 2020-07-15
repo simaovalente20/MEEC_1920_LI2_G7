@@ -8,9 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
-from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero,extract_feature2,extract_feature3
+from y_audio_utils import read_sounfile, extract_feature, aug_speed, aug_add_noise, aug_shift_zero, extract_feature2, extract_feature3
 from sklearn import metrics
-
 
 # Keyword Scaler/Model
 scaler_keyword_augmented = StandardScaler()
@@ -66,13 +65,11 @@ def extract_feature_speaker(file_name, **kwargs):
     return result
 
 filename = ("teste_file//baixo_noise_3.wav")
-#filename = ("teste_file//baixo_teste.wav")
-#filename = ("teste_file//G7_Baixo.wav")
-#filename = ("teste_file//teste_baixo_8.wav")
+
 
 sound_file, rate = read_sounfile(filename)
 keyword_features = extract_feature2(sound_file, 44100, mfcc=True)
-speaker_features = extract_feature3(sound_file, 44100,mfcc=True)
+speaker_features = extract_feature3(sound_file, 44100,mfcc=True,chroma=True)
 
 
 keyword_normalized = scaler_keyword_augmented.transform(keyword_features.reshape(1, -1))
