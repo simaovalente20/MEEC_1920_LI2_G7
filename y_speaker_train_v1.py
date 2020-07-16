@@ -39,18 +39,18 @@ def load_data(test_size = 0.2):
             trimmed, index = librosa.effects.trim(sound_2s, top_db=30)
             print(librosa.get_duration(sound_2s,sr), librosa.get_duration(trimmed,sr))
             # sd.play(sound_frame, sr)
-            features = extract_feature3(sound_2s, sr, mfcc=True)
+            features = extract_feature3(sound_2s, sr, mfcc=True,chroma=True)
             print(len(features))
             x.append(features)
             y.append(speaker)
             i = 1
-            for i in range(1, 8):
+            '''for i in range(1, 8):
                 frame_shift = aug_shift(trimmed, sr, i)
                 print(librosa.get_duration(sound_2s,sr), librosa.get_duration(trimmed,sr))
-                features = extract_feature3(frame_shift, sr, mfcc=True)
+                features = extract_feature3(frame_shift, sr, mfcc=True,chroma=True)
                 print(len(features))
                 x.append(features)
-                y.append(speaker)
+                y.append(speaker)'''
             # Add Noise
                 #frame_noise = aug_add_noise(sound_frame)
                 #features = extract_feature(frame_noise, sr, mfcc=True, chroma=True, mel=True)
@@ -93,7 +93,7 @@ pickle.dump(transformer, open('utils_mfcc/scaler_speaker_robust_aug_13mfcc.bin',
 print("[+] Number of training samples:", X_train.shape[0]) # number of samples in training data
 print("[+] Number of testing samples:", X_test.shape[0]) # number of samples in testing data
 print("[+] Number of features:", X_train.shape[1]) # number of features used, this is a vector of features extracted using extract_features() function
-model = MLPClassifier(alpha=0.0001, batch_size=256, epsilon=1e-08, hidden_layer_sizes=(300), learning_rate='adaptive',max_iter=500)
+model = MLPClassifier(alpha=0.0001, batch_size=256, epsilon=1e-08, hidden_layer_sizes=(300), learning_rate='adaptive', max_iter=500)
 
 print("[*] Training the model...")
 model.fit(X_train,Y_train)

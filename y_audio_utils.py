@@ -155,8 +155,9 @@ def aug_shift_zero(data, sr, shift_max, shift_direction):
 def aug_shift(data,sr,i):
     return  np.roll(data, int((sr*2) *(i/8)))
 
-
-'''tempo  = 0
+# Debug e plot
+'''
+tempo  = 0
 empty_files = []
 for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
     print(base_path.split("\\")[2])
@@ -187,7 +188,7 @@ for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
         sd.play(sound_frame, sr)
 
         i = 1
-        for i in range(1, 10):
+        for i in range(1, 8):
             frame_shift = aug_shift(sound_frame, sr, i)
             plot_time_series(frame_shift, sr)
             sd.play(frame_shift, sr)
@@ -204,23 +205,23 @@ for base_path in glob.glob("Dataset_04_07_2020\Dataset\speaker\G*"):
         # sd.play(data_slower, sr)
 
         # Time Shift with padding
-        frame_shift = aug_shift(sound_frame, sr,1)
-        plot_time_series(frame_shift, sr)
-        sd.play(frame_shift, sr)
-
-        frame_shift = aug_shift(sound_frame, sr,2)
-        plot_time_series(frame_shift, sr)
-        sd.play(frame_shift, sr)
-
-        frame_shift = aug_shift(sound_frame, sr,3)
-        plot_time_series(frame_shift, sr)
-        sd.play(frame_shift, sr)
-        stop = 1
+        # frame_shift = aug_shift(sound_frame, sr,2)
+        # plot_time_series(frame_shift, sr)
+        # sd.play(frame_shift, sr)
+        # 
+        # frame_shift = aug_shift(sound_frame, sr,4)
+        # plot_time_series(frame_shift, sr)
+        # sd.play(frame_shift, sr)
+        # 
+        # frame_shift = aug_shift(sound_frame, sr,6)
+        # plot_time_series(frame_shift, sr)
+        # sd.play(frame_shift, sr)
+        # stop = 1
         
 print(tempo)
 print(t)
-stop = 1'''
-
+stop = 1
+'''
 
 
 

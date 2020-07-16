@@ -43,7 +43,7 @@ def load_data(test_size = 0.2):
             x.append(features)
             y.append(keyword)
             i = 1
-            for i in range (1,10):
+            for i in range (1,8):
                 frame_shift = aug_shift(sound_2s, sr, i)
                 features = extract_feature2(frame_shift, sr, mfcc=True)
                 print(len(features))

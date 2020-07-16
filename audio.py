@@ -105,10 +105,10 @@ class Audio:
     def new_frame(self, in_data, frame_count, time_info, flag):
         if flag:
             print("Playback Error: %i" % flag)
-       # print("Callback...")
+        # print("Callback...")
         #print(len(in_data))
         data = np.fromstring(in_data, np.float32)
-       # print(len(data))
+        # print(len(data))
         self.prd_complete(data)
         return in_data, pyaudio.paContinue
 
