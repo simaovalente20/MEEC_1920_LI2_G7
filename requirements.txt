@@ -15,7 +15,7 @@ llvmlite==0.32.1
 matplotlib==3.2.1
 noisereduce==1.1.0
 numba==0.49.1
-numpy==1.18.3
+numpy==1.22.0
 opencv-python==4.2.0.34
 pandas==1.0.3
 Pillow==7.1.2
